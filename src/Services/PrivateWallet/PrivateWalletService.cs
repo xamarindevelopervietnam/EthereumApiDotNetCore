@@ -1,4 +1,5 @@
 ﻿using BusinessModels;
+using BusinessModels.PrivateWallet;
 using Core.Exceptions;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RPC.Eth.DTOs;

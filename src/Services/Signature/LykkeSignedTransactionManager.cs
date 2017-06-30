@@ -8,13 +8,14 @@ using Nethereum.Web3;
 using Nethereum.Hex.HexConvertors.Extensions;
 using SigningServiceApiCaller;
 using Nethereum.ABI.Util;
-using Nethereum.RPC.Eth.TransactionManagers;
 using Nethereum.Util;
 using Nethereum.Signer;
 using SigningServiceApiCaller.Models;
 using Core;
 using Core.Settings;
 using Services.Signature;
+using Nethereum.RPC.TransactionManagers;
+using System;
 
 namespace LkeServices.Signature
 {
@@ -29,6 +30,8 @@ namespace LkeServices.Signature
         private readonly INonceCalculator _nonceCalculator;
 
         public IClient Client { get; set; }
+        public BigInteger DefaultGasPrice { get; set; }
+        public BigInteger DefaultGas { get; set; }
 
         public LykkeSignedTransactionManager(Web3 web3, ILykkeSigningAPI signatureApi, IBaseSettings baseSettings, INonceCalculator nonceCalculator)
         {
@@ -40,25 +43,6 @@ namespace LkeServices.Signature
             Client = web3.Client;
             _web3 = web3;
         }
-
-        //public async Task<HexBigInteger> GetNonceAsync(TransactionInput transaction)
-        //{
-        //    var ethGetTransactionCount = new EthGetTransactionCount(Client);
-        //    var nonce = transaction.Nonce;
-        //    if (nonce == null)
-        //    {
-        //        nonce = await ethGetTransactionCount.SendRequestAsync(transaction.From).ConfigureAwait(false);
-
-        //        if (nonce.Value <= _nonceCount)
-        //        {
-        //            _nonceCount = _nonceCount + 1;
-        //            nonce = new HexBigInteger(_nonceCount);
-        //        }
-        //        else
-        //            _nonceCount = nonce.Value;
-        //    }
-        //    return nonce;
-        //}
 
         public async Task<string> SendTransactionAsync<T>(T transaction) where T : TransactionInput
         {
@@ -77,8 +61,8 @@ namespace LkeServices.Signature
                 selectedGasPrice = _minGasPrice;
             }
 
-            var gasPrice = transaction.GasPrice?.Value ?? selectedGasPrice;
-            var gasValue = transaction.Gas?.Value ?? Constants.GasForCoinTransaction;
+            var gasPrice = selectedGasPrice;
+            var gasValue = Constants.GasForCoinTransaction;
             var tr = new Nethereum.Signer.Transaction(transaction.To, value, nonce, gasPrice, gasValue, transaction.Data);
             var hex = tr.GetRLPEncoded().ToHex();
 
@@ -91,6 +75,19 @@ namespace LkeServices.Signature
             var response = await _signatureApi.ApiEthereumSignPostAsync(requestBody);
 
             return await ethSendTransaction.SendRequestAsync(response.SignedTransaction.EnsureHexPrefix()).ConfigureAwait(false);
+        }
+
+        public async Task<HexBigInteger> EstimateGasAsync<T>(T callInput) where T : CallInput
+        {
+            if (Client == null) throw new NullReferenceException("Client not configured");
+            if (callInput == null) throw new ArgumentNullException(nameof(callInput));
+            var ethEstimateGas = new EthEstimateGas(Client);
+            return await ethEstimateGas.SendRequestAsync(callInput);
+        }
+
+        public async Task<string> SendTransactionAsync(string from, string to, HexBigInteger amount)
+        {
+            return await SendTransactionAsync(new TransactionInput("", to, from, new HexBigInteger(DefaultGas), amount));
         }
     }
 }

@@ -17,6 +17,7 @@ using Service.UnitTests.Mocks;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Signer;
 using Core.Exceptions;
+using BusinessModels.PrivateWallet;
 
 namespace Service.UnitTests.PrivateWallet
 {
@@ -35,8 +36,8 @@ namespace Service.UnitTests.PrivateWallet
             Mock<IWeb3> web3Mock = new Mock<IWeb3>();
             _nonceCalc = (MockNonceCalculator)Config.Services.GetService<INonceCalculator>();
             #region SetupMockWeb3
-            _client.Setup(x => x.SendRequestAsync(It.IsAny<RpcRequest>(), It.IsAny<string>()))
-                .Returns(Task.FromResult(new RpcResponse(null, (JToken)null)));
+            _client.Setup(x => x.SendRequestAsync<string>(It.IsAny<Nethereum.JsonRpc.Client.RpcRequest>(), It.IsAny<string>()))
+                .Returns(Task.FromResult(""));
             web3Mock.Setup(x => x.Client).Returns(_client.Object);
 
             #endregion
@@ -85,7 +86,7 @@ namespace Service.UnitTests.PrivateWallet
             string transactionHash = await _privateWalletService.SubmitSignedTransaction(from, signedTransaction);
             Nethereum.Signer.Transaction transaction = new Nethereum.Signer.Transaction(signedTransaction.HexToByteArray());
 
-            _client.Verify(x => x.SendRequestAsync(It.IsAny<RpcRequest>(), It.IsAny<string>()), Times.Once);
+            _client.Verify(x => x.SendRequestAsync<string>(It.IsAny<Nethereum.JsonRpc.Client.RpcRequest>(), null), Times.Once);
             Assert.AreEqual(from, transaction.Key.GetPublicAddress());
             Assert.AreEqual(_nonceCalc._nonceStorage[from].Value, new HexBigInteger(transaction.Nonce.ToHex()));
             Assert.AreEqual(ethTransaction.GasAmount, new HexBigInteger(transaction.GasLimit.ToHex()));

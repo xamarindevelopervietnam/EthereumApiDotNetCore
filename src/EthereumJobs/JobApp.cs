@@ -10,6 +10,8 @@ using System.Reflection;
 using System.Threading;
 using System.Runtime.Loader;
 using Lykke.JobTriggers.Extenstions;
+using Nethereum.RPC.TransactionManagers;
+using Services;
 
 namespace EthereumJobs
 {
@@ -32,7 +34,7 @@ namespace EthereumJobs
             });
 
             Services = collection.BuildServiceProvider();
-
+            Services.ActivateRequestInterceptor();
             // restore contract payment events after service shutdown
             //await Task.Run(() => Services.GetService<ProcessManualEvents>().Start());
             //await Task.Run(() => Services.GetService<CatchOldUserContractEvents>().Start());

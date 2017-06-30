@@ -28,7 +28,7 @@ namespace EthereumApi
         }
 
         public IConfigurationRoot Configuration { get; }
-        public IServiceProvider ServiceProvider { get; private set; }
+        public static IServiceProvider ServiceProvider { get; private set; }
 
         // This method gets called by the runtime. Use this method to add services to the container
         public IServiceProvider ConfigureServices(IServiceCollection services)
@@ -58,8 +58,9 @@ namespace EthereumApi
                     Title = "Ethereum.Api"
                 });
             });
-
-            return services.BuildServiceProvider();
+            ServiceProvider = services.BuildServiceProvider();
+            ServiceProvider.ActivateRequestInterceptor();
+            return ServiceProvider;
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline

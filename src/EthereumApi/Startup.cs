@@ -58,6 +58,7 @@ namespace EthereumApi
                     Title = "Ethereum.Api"
                 });
             });
+
             ServiceProvider = services.BuildServiceProvider();
             ServiceProvider.ActivateRequestInterceptor();
             return ServiceProvider;

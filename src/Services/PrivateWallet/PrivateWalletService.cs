@@ -7,6 +7,7 @@ using Nethereum.RPC.Eth.Transactions;
 using Nethereum.Util;
 using Nethereum.Web3;
 using Services.Signature;
+using Services.Transactions;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -18,18 +19,20 @@ namespace Services.PrivateWallet
     {
         Task<string> GetTransactionForSigning(EthTransaction ethTransaction);
         Task<string> SubmitSignedTransaction(string from, string signedTrHex);
-        Task<bool> CheckTransactionSign(string from, string signedTrHex);
+        //Task<bool> CheckTransactionSign(string from, string signedTrHex);
     }
 
     public class PrivateWalletService : IPrivateWalletService
     {
         private readonly IWeb3 _web3;
         private readonly INonceCalculator _nonceCalculator;
-        private AddressUtil _addressUtil;
+        private readonly IRawTransactionSubmitter _rawTransactionSubmitter;
 
-        public PrivateWalletService(IWeb3 web3, INonceCalculator nonceCalculator)
+        public PrivateWalletService(IWeb3 web3, 
+            INonceCalculator nonceCalculator, 
+            IRawTransactionSubmitter rawTransactionSubmitter)
         {
-            _addressUtil = new AddressUtil();
+            _rawTransactionSubmitter = rawTransactionSubmitter;
             _nonceCalculator = nonceCalculator;
             _web3 = web3;
         }
@@ -51,24 +54,9 @@ namespace Services.PrivateWallet
 
         public async Task<string> SubmitSignedTransaction(string from, string signedTrHex)
         {
-            bool isSignedRight = await CheckTransactionSign(from, signedTrHex);
-            if (!isSignedRight)
-            {
-                throw new ClientSideException(ExceptionType.WrongSign, "WrongSign");
-            }
-
-            var ethSendTransaction = new EthSendRawTransaction(_web3.Client);
-            string transactionHex = await ethSendTransaction.SendRequestAsync(signedTrHex);
+            string transactionHex = await _rawTransactionSubmitter.SubmitSignedTransaction(from, signedTrHex);
 
             return transactionHex;
-        }
-
-        public async Task<bool> CheckTransactionSign(string from, string signedTrHex)
-        {
-            Nethereum.Signer.Transaction transaction = new Nethereum.Signer.Transaction(signedTrHex.HexToByteArray());
-            string signedBy = transaction.Key.GetPublicAddress();
-
-            return _addressUtil.ConvertToChecksumAddress(from) == _addressUtil.ConvertToChecksumAddress(signedBy);
         }
     }
 }

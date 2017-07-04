@@ -19,6 +19,7 @@ using Nethereum.Signer;
 using Core.Exceptions;
 using BusinessModels.PrivateWallet;
 using System.Diagnostics;
+using Services.Transactions;
 
 namespace Service.UnitTests.PrivateWallet
 {
@@ -29,6 +30,7 @@ namespace Service.UnitTests.PrivateWallet
         PrivateWalletService _privateWalletService;
         private MockNonceCalculator _nonceCalc;
         private Mock<IClient> _client;
+        private ISignatureChecker _signatureChecker;
 
         [TestInitialize]
         public void TestInit()
@@ -36,14 +38,15 @@ namespace Service.UnitTests.PrivateWallet
             _client = new Mock<IClient>();
             Mock<IWeb3> web3Mock = new Mock<IWeb3>();
             _nonceCalc = (MockNonceCalculator)Config.Services.GetService<INonceCalculator>();
+            _signatureChecker = Config.Services.GetService<ISignatureChecker>();
             #region SetupMockWeb3
             _client.Setup(x => x.SendRequestAsync<string>(It.IsAny<Nethereum.JsonRpc.Client.RpcRequest>(), It.IsAny<string>()))
                 .Returns(Task.FromResult(""));
             web3Mock.Setup(x => x.Client).Returns(_client.Object);
-
+            IRawTransactionSubmitter rawTransactionSubmitter = new RawTransactionSubmitter(web3Mock.Object, _signatureChecker);
             #endregion
 
-            _privateWalletService = new PrivateWalletService(web3Mock.Object, _nonceCalc);
+            _privateWalletService = new PrivateWalletService(web3Mock.Object, _nonceCalc, rawTransactionSubmitter);
         }
 
         [TestMethod]

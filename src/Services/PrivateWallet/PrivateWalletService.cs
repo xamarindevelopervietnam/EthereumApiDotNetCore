@@ -28,7 +28,7 @@ namespace Services.PrivateWallet
         Task<OperationEstimationResult> EstimateTransactionExecutionCost(string from, string signedTrHex);
         Task<string> GetTransactionForSigning(EthTransaction ethTransaction);
         Task<string> SubmitSignedTransaction(string from, string signedTrHex);
-        Task<bool> CheckTransactionSign(string from, string signedTrHex);
+        //Task<bool> CheckTransactionSign(string from, string signedTrHex);
         Task ValidateInputAsync(EthTransaction transaction);
     }
 
@@ -36,10 +36,9 @@ namespace Services.PrivateWallet
     {
         private readonly IWeb3 _web3;
         private readonly INonceCalculator _nonceCalculator;
-        private AddressUtil _addressUtil;
+        private readonly IRawTransactionSubmitter _rawTransactionSubmitter;
         private readonly IEthereumTransactionService _ethereumTransactionService;
         private readonly IPaymentService _paymentService;
-        private readonly IRawTransactionSubmitter _rawTransactionSubmitter;
         private readonly ISignatureChecker _signatureChecker;
         private readonly ITransactionValidationService _transactionValidationService;
         private readonly IErc20PrivateWalletService _erc20Service;
@@ -114,14 +113,6 @@ namespace Services.PrivateWallet
             string transactionHex = await _rawTransactionSubmitter.SubmitSignedTransaction(from, signedTrHex);
 
             return transactionHex;
-        }
-
-        public async Task<bool> CheckTransactionSign(string from, string signedTrHex)
-        {
-            Nethereum.Signer.Transaction transaction = new Nethereum.Signer.Transaction(signedTrHex.HexToByteArray());
-            string signedBy = transaction.Key.GetPublicAddress();
-
-            return _addressUtil.ConvertToChecksumAddress(from) == _addressUtil.ConvertToChecksumAddress(signedBy);
         }
 
         /// <summary>

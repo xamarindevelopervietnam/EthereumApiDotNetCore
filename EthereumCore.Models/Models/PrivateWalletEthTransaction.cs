@@ -27,7 +27,11 @@ namespace EthereumApi.Models.Models
         [Required]
         [RegularExpression(Constants.BigIntTemplate)]
         public string GasPrice { get; set; }
+    }
 
+    [DataContract]
+    public class PrivateWalletEthTransaction : EthTransactionBase
+    {
         [DataMember]
         [Required]
         [RegularExpression(Constants.BigIntTemplate)]

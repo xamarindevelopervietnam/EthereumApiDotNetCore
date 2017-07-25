@@ -38,13 +38,15 @@ namespace EthereumApi.Models.Indexer
         [DataMember(Name = "input")]
         public string Input { get; set; }
         [DataMember(Name = "blockTimestamp")]
-        public int BlockTimestamp { get; set; }
+        public uint BlockTimestamp { get; set; }
         [DataMember(Name = "contractAddress")]
         public string ContractAddress { get; set; }
         [DataMember(Name = "gasUsed")]
         public string GasUsed { get; set; }
-        [DataMember(Name = "BlockTimeUtc")]
+        [DataMember(Name = "blockTimeUtc")]
         public DateTime BlockTimeUtc { get; set; }
+        [DataMember(Name = "hasError")]
+        public bool HasError { get; set; }
     }
 
     [DataContract]
@@ -73,5 +75,9 @@ namespace EthereumApi.Models.Indexer
         public int MessageIndex { get; set; }
         [DataMember(Name = "type")]
         public string Type { get; set; }
+        [DataMember(Name = "blockTimestamp")]
+        public uint BlockTimestamp { get; set; }
+        [DataMember(Name = "blockTimeUtc")]
+        public DateTime BlockTimeUtc { get; set; }
     }
 }

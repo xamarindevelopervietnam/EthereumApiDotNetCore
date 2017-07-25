@@ -57,6 +57,11 @@ namespace EthereumJobs.Job
         [QueueTrigger(Constants.TransactionMonitoringQueue, 100, true)]
         public async Task Execute(CoinTransactionMessage transaction, QueueTriggeringContext context)
         {
+            if (transaction?.TransactionHash == "0xea0a914111f572b89f599e45ed35ffebef0bbb57bbe3d393095110c5525b3740")
+            {
+                return;
+            }
+
             ICoinTransaction coinTransaction = null;
             try
             {
@@ -91,17 +96,36 @@ namespace EthereumJobs.Job
             {
                 if (coinTransaction != null && coinTransaction.ConfirmationLevel != 0)
                 {
-                    bool sentToRabbit = await SendCompletedCoinEvent(transaction.TransactionHash, transaction.OperationId, true, context, transaction);
-
-                    if (sentToRabbit)
+                    if (!coinTransaction.Error)
                     {
-                        await _log.WriteInfoAsync("CoinTransactionService", "Execute", "",
-                                   $"Put coin transaction {transaction.TransactionHash} to rabbit queue with confimation level {coinTransaction?.ConfirmationLevel ?? 0}");
+                        bool sentToRabbit = await SendCompletedCoinEvent(transaction.TransactionHash, transaction.OperationId, true, context, transaction);
+
+                        if (sentToRabbit)
+                        {
+                            await _log.WriteInfoAsync("CoinTransactionService", "Execute", "",
+                                       $"Put coin transaction {transaction.TransactionHash} to rabbit queue with confimation level {coinTransaction?.ConfirmationLevel ?? 0}");
+                        }
+                        else
+                        {
+                            await _log.WriteInfoAsync("CoinTransactionService", "Execute", "",
+                                $"Put coin transaction {transaction.TransactionHash} to monitoring queue with confimation level {coinTransaction?.ConfirmationLevel ?? 0}");
+                        }
                     }
                     else
                     {
-                        await _log.WriteInfoAsync("CoinTransactionService", "Execute", "",
-                            $"Put coin transaction {transaction.TransactionHash} to monitoring queue with confimation level {coinTransaction?.ConfirmationLevel ?? 0}");
+                        ICoinEvent coinEvent = await GetCoinEvent(transaction.TransactionHash, transaction.OperationId, true);
+                        await _slackNotifier.ErrorAsync($"EthereumCoreService: Transaction with hash {transaction.TransactionHash} has an Error!({coinEvent.CoinEventType})");
+                        if (coinEvent.CoinEventType == CoinEventType.CashoutStarted || 
+                            coinEvent.CoinEventType == CoinEventType.CashoutCompleted)
+                        {
+                            //Drop cashout operation;
+                            return;
+                        }
+                        else
+                        {
+                            await RepeatOperationTillWin(transaction);
+                            await _slackNotifier.ErrorAsync($"EthereumCoreService: Transaction with hash {transaction.TransactionHash} has an Error. RETRY!({coinEvent.CoinEventType})");
+                        }
                     }
                 }
                 else
@@ -131,7 +155,7 @@ namespace EthereumJobs.Job
             switch (coinEvent.CoinEventType)
             {
                 case CoinEventType.CashinStarted:
-                case CoinEventType.CashoutCompleted:
+                case CoinEventType.CashinCompleted:
                     await UpdateUserTransferWallet(coinEvent.FromAddress, coinEvent.ToAddress);
 
                     return;

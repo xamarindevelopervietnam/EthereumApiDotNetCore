@@ -13,6 +13,7 @@ using Nethereum.Signer;
 using SigningServiceApiCaller.Models;
 using Core;
 using Core.Settings;
+using System.Threading;
 using Services.Signature;
 using Nethereum.RPC.TransactionManagers;
 using System;
@@ -27,6 +28,7 @@ namespace LkeServices.Signature
         private readonly ILykkeSigningAPI _signatureApi;
         private readonly Web3 _web3;
         private readonly IBaseSettings _baseSettings;
+        private readonly SemaphoreSlim _readLock;
         private readonly INonceCalculator _nonceCalculator;
 
         public IClient Client { get; set; }
@@ -42,6 +44,29 @@ namespace LkeServices.Signature
             _signatureApi = signatureApi;
             Client = web3.Client;
             _web3 = web3;
+            _readLock = new SemaphoreSlim(1, 1);
+        }
+
+        public async Task<HexBigInteger> GetNonceAsync(TransactionInput transaction)
+        {
+            var ethGetTransactionCount = new EthGetTransactionCount(Client);
+            var nonce = transaction.Nonce;
+            if (nonce == null)
+            {
+                nonce = await ethGetTransactionCount.SendRequestAsync(transaction.From).ConfigureAwait(false);
+
+                if (nonce.Value <= _nonceCount)
+                {
+                    _nonceCount = _nonceCount + 1;
+                    nonce = new HexBigInteger(_nonceCount);
+                }
+                else
+                {
+                    _nonceCount = nonce.Value;
+                }
+            }
+
+            return nonce;
         }
 
         public async Task<string> SendTransactionAsync<T>(T transaction) where T : TransactionInput
@@ -49,7 +74,16 @@ namespace LkeServices.Signature
             var ethSendTransaction = new EthSendRawTransaction(Client);
             var currentGasPriceHex = await _web3.Eth.GasPrice.SendRequestAsync();
             var currentGasPrice = currentGasPriceHex.Value;
-            var nonce = await _nonceCalculator. GetNonceAsync(transaction);
+            HexBigInteger nonce;
+            try
+            {
+                await _readLock.WaitAsync();
+                nonce = await GetNonceAsync(transaction);
+            }
+            finally
+            {
+                _readLock.Release();
+            }
             var value = transaction.Value?.Value ?? 0;
             BigInteger selectedGasPrice = currentGasPrice * _baseSettings.GasPricePercentage / 100;
             if (selectedGasPrice > _maxGasPrice)

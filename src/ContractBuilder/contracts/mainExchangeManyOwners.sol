@@ -2,7 +2,7 @@ pragma solidity ^0.4.9;
 import "./coin.sol";
 import "./interfaces/manyOwnersBaseContract.sol";
 
-contract MainExchange is ManyOwnersBaseContract{
+contract MainExchangeMultipleOwners is ManyOwnersBaseContract{
 
     //EVENTS
     event AddOwnerEvent(address indexed owner);
@@ -14,7 +14,7 @@ contract MainExchange is ManyOwnersBaseContract{
     uint _lastPing;
     mapping (uint => bool) public transactions;
 
-    function MainExchange() {
+    function MainExchangeMultipleOwners() {
         _owner = msg.sender;
         _owners[msg.sender] = true;
     }
@@ -129,7 +129,7 @@ contract MainExchange is ManyOwnersBaseContract{
         return client_addr == ecrecover(hash, v, r, s);
     }
     
-    function AddOwners(address[] owners) onlyowner returns (bool isOk){
+    function addOwners(address[] owners) onlyowner returns (bool isOk){
          for (uint i = 0; i < owners.length; i++) {
             _owners[owners[i]] = true;
             AddOwnerEvent(owners[i]);
@@ -138,7 +138,7 @@ contract MainExchange is ManyOwnersBaseContract{
         return true;
     }
 
-    function RemoveOwners(address[] owners) onlyowner returns (bool isOk){
+    function removeOwners(address[] owners) onlyowner returns (bool isOk){
         for (uint i = 0; i < owners.length; i++) {
             _owners[owners[i]] = false;
             RemoveOwnerEvent(owners[i]);

@@ -39,15 +39,6 @@ namespace EthereumApi.Models.Models
     }
 
     [DataContract]
-    public class PrivateWalletEthTransaction : EthTransactionBase
-    {
-        [DataMember]
-        [Required]
-        [RegularExpression(Constants.BigIntTemplate)]
-        public string Value { get; set; }
-    }
-
-    [DataContract]
     public class PrivateWalletErc20Transaction : EthTransactionBase
     {
         [DataMember]
@@ -62,7 +53,7 @@ namespace EthereumApi.Models.Models
         [DataMember]
         [Required]
         [RegularExpression(Constants.BigIntAllowZeroTemplate)]
-        public override string Value { get; set; }
+        public string Value { get; set; }
     }
 
     [DataContract]

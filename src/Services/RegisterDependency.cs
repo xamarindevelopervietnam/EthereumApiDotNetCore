@@ -56,6 +56,10 @@ namespace Services
             services.AddSingleton<IErc20BalanceService, Erc20BalanceService>();
             services.AddSingleton<ITransactionValidationService, TransactionValidationService>();
 
+            services.AddSingleton<IOwnerService, OwnerService>();
+            services.AddSingleton<IOwnerBlockchainService, OwnerBlockchainService>();
+            services.AddSingleton<IRoundRobinTransactionSender, RoundRobinTransactionSender>();
+
             //Uses HttpClient Inside -> singleton
             services.AddSingleton<ILykkeSigningAPI>((provider) =>
             {

@@ -108,6 +108,10 @@ namespace AzureRepositories
                 new AzureTableStorage<CoinContractFilterEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.CoinFiltersTable,
                     provider.GetService<ILog>())));
 
+            services.AddSingleton<IOwnerRepository>(provider => new OwnerRepository(
+                new AzureTableStorage<OwnerEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.OwnerTable,
+                    provider.GetService<ILog>())));
+
             services.AddSingleton<ICoinRepository>((provider => new CoinRepository(
                 new AzureTableStorage<CoinEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.CoinTable
                     , provider.GetService<ILog>())

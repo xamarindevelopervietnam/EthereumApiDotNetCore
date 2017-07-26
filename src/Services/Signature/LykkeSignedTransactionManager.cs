@@ -51,6 +51,7 @@ namespace LkeServices.Signature
             _signatureApi = signatureApi;
             Client = web3.Client;
             _web3 = web3;
+            _roundRobinTransactionSender = roundRobinTransactionSender;
             _readLock = new SemaphoreSlim(1, 1);
         }
 
@@ -93,7 +94,7 @@ namespace LkeServices.Signature
                 transaction.GasPrice,
                 transaction.Gas);
         }
-        
+
         public async Task<string> SendTransactionAsync(string from, string to, HexBigInteger amount)
         {
             return await SendTransactionASync(from, to, "", amount);

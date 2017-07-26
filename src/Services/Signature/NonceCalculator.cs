@@ -19,13 +19,10 @@ namespace Services.Signature
     public class NonceCalculator : INonceCalculator
     {
         private readonly Web3 _web3;
-        private readonly INonceRepository _nonceRepository;
 
-        public NonceCalculator(Web3 web3, INonceRepository nonceRepository)
+        public NonceCalculator(Web3 web3)
         {
             _web3 = web3;
-            _nonceRepository = nonceRepository;
-            _nonceRepository.CleanAsync().Wait();
         }
 
         public async Task<HexBigInteger> GetNonceAsync(TransactionInput transaction)

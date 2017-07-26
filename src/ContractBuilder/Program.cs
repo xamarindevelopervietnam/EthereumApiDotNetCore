@@ -41,6 +41,8 @@ namespace ContractBuilder
     }
     public class Program
     {
+        private static string _oldMainExchangeAddress;
+
         public static IServiceProvider ServiceProvider { get; set; }
 
         public static void Main(string[] args)
@@ -76,7 +78,7 @@ namespace ContractBuilder
             //var stringKey = Encoding.Unicode.GetString(key);
             GetAllContractInJson();
             ServiceProvider = collection.BuildServiceProvider();
-
+            ServiceProvider.ActivateRequestInterceptor();
             //var lykkeSigningAPI = ServiceProvider.GetService<ILykkeSigningAPI>();
             //lykkeSigningAPI.ApiEthereumAddkeyPost(new AddKeyRequest()
             //{
@@ -113,6 +115,7 @@ namespace ContractBuilder
                 Console.WriteLine("5. Deploy BCAP Token");
                 Console.WriteLine("6. Deploy main exchange contract with multiple owners!(Make sure that jobs are stopped)");
                 Console.WriteLine("7. Add more owners to Main Exchange Contract with multiple owners!(Add addresses with some eth on it)");
+                Console.WriteLine("8. Migrate Ethereum Adapter to New Main Exchange!");
                 Console.WriteLine("9. Deploy And Migrate To NM!(Make sure that jobs are stopped)");
                 Console.WriteLine("10. Send transaction to MainExchange!(Make sure that jobs are stopped)");
                 Console.WriteLine("0. Exit");
@@ -142,9 +145,9 @@ namespace ContractBuilder
                     case "7":
                         AddOwners().Wait();
                         break;
-                    //case "8":
-                    //    MigrateAdapter(,).Wait();
-                    //    break;
+                    case "8":
+                        MigrateAdapter().Wait();
+                        break;
                     case "9":
                         DeployAndMigrateToNM().Wait();
                         break;
@@ -163,7 +166,7 @@ namespace ContractBuilder
         private class EthereumContractExtended
         {
             public string EthereumContractName { get; set; }
-            public EthereumContract Contract { get; set; }
+            public Core.Settings.EthereumContract Contract { get; set; }
         }
 
         private static void GetAllContractInJson()
@@ -182,7 +185,7 @@ namespace ContractBuilder
                 ethereumContracts.Add(new EthereumContractExtended()
                 {
                     EthereumContractName = fi.Name,
-                    Contract = new EthereumContract()
+                    Contract = new Core.Settings.EthereumContract()
                     {
                         Abi = contentAbi,
                         ByteCode = byteCode,
@@ -234,7 +237,7 @@ namespace ContractBuilder
                 var bytecode = GetFileContent($"{transferName}.bin");
 
                 string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode, clientAddress);
-                settings.EthereumCore.TokenTransferContract = new EthereumContract
+                settings.EthereumCore.TokenTransferContract = new Core.Settings.EthereumContract
                 {
                     Address = contractAddress,
                     Abi = abi,
@@ -298,9 +301,9 @@ namespace ContractBuilder
                 var settings = GetCurrentSettings();
                 string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode, settings.EthereumCore.MainExchangeContract.Address);
                 if (settings.EthereumCore.CoinContracts == null)
-                    settings.EthereumCore.CoinContracts = new Dictionary<string, EthereumContract>();
+                    settings.EthereumCore.CoinContracts = new Dictionary<string, Core.Settings.EthereumContract>();
 
-                settings.EthereumCore.CoinContracts[name] = new EthereumContract { Address = contractAddress, Abi = abi };
+                settings.EthereumCore.CoinContracts[name] = new Core.Settings.EthereumContract { Address = contractAddress, Abi = abi };
 
                 Console.WriteLine("New coin contract: " + contractAddress);
 
@@ -553,7 +556,7 @@ namespace ContractBuilder
                 var bytecode = GetFileContent("BCAPToken.bin");
                 string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode, settings.EthereumCore.EthereumMainAccount);
 
-                settings.EthereumCore.MainExchangeContract = new EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
+                settings.EthereumCore.MainExchangeContract = new Core.Settings.EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
                 Console.WriteLine("New BCAP Token: " + contractAddress);
 
                 SaveSettings(settings);

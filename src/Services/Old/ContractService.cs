@@ -72,7 +72,7 @@ namespace Services
         public async Task<string> CreateContract(string abi, string bytecode, params object[] constructorParams)
         {
             // deploy contract
-            var transactionHash = await _web3.Eth.DeployContract.SendRequestAsync(abi, bytecode, _settings.EthereumMainAccount, new HexBigInteger(2000000), constructorParams);
+            var transactionHash = await _web3.Eth.DeployContract.SendRequestAsync(abi, bytecode, _settings.EthereumMainAccount, new HexBigInteger(3000000), constructorParams);
 
             // get contract transaction
             TransactionReceipt receipt;

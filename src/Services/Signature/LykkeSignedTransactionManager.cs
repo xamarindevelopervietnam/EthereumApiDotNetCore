@@ -17,6 +17,7 @@ using System.Threading;
 using Services.Signature;
 using Nethereum.RPC.TransactionManagers;
 using System;
+using BusinessModels;
 
 namespace LkeServices.Signature
 {
@@ -30,12 +31,17 @@ namespace LkeServices.Signature
         private readonly IBaseSettings _baseSettings;
         private readonly SemaphoreSlim _readLock;
         private readonly INonceCalculator _nonceCalculator;
+        private readonly IRoundRobinTransactionSender _roundRobinTransactionSender;
 
         public IClient Client { get; set; }
         public BigInteger DefaultGasPrice { get; set; }
         public BigInteger DefaultGas { get; set; }
 
-        public LykkeSignedTransactionManager(Web3 web3, ILykkeSigningAPI signatureApi, IBaseSettings baseSettings, INonceCalculator nonceCalculator)
+        public LykkeSignedTransactionManager(Web3 web3, 
+            ILykkeSigningAPI signatureApi, 
+            IBaseSettings baseSettings, 
+            INonceCalculator nonceCalculator,
+            IRoundRobinTransactionSender roundRobinTransactionSender)
         {
             _nonceCalculator = nonceCalculator;
             _baseSettings = baseSettings;
@@ -44,6 +50,7 @@ namespace LkeServices.Signature
             _signatureApi = signatureApi;
             Client = web3.Client;
             _web3 = web3;
+            _roundRobinTransactionSender = roundRobinTransactionSender;
             _readLock = new SemaphoreSlim(1, 1);
         }
 
@@ -75,15 +82,32 @@ namespace LkeServices.Signature
             var currentGasPriceHex = await _web3.Eth.GasPrice.SendRequestAsync();
             var currentGasPrice = currentGasPriceHex.Value;
             HexBigInteger nonce;
-            try
+            
+            #region RoundRobin
+
+            if (transaction.From == Constants.AddressForRoundRobinTransactionSending)
             {
-                await _readLock.WaitAsync();
-                nonce = await GetNonceAsync(transaction);
+                //Send from RoundRobin pool
+                AddressNonceModel senderInfo = await _roundRobinTransactionSender.GetSenderAndHisNonce();
+                transaction.From = senderInfo.Address;
+                nonce = new HexBigInteger(senderInfo.Nonce);
             }
-            finally
+            else
             {
-                _readLock.Release();
+                //Send from EthereumMainAccount
+                try
+                {
+                    await _readLock.WaitAsync();
+                    nonce = await GetNonceAsync(transaction);
+                }
+                finally
+                {
+                    _readLock.Release();
+                }
             }
+
+            #endregion
+
             var value = transaction.Value?.Value ?? 0;
             BigInteger selectedGasPrice = currentGasPrice * _baseSettings.GasPricePercentage / 100;
             if (selectedGasPrice > _maxGasPrice)
@@ -96,7 +120,7 @@ namespace LkeServices.Signature
             }
 
             var gasPrice = selectedGasPrice;
-            var gasValue = Constants.GasForCoinTransaction;
+            var gasValue = transaction.Gas?.Value ?? Constants.GasForCoinTransaction;
             var tr = new Nethereum.Signer.Transaction(transaction.To, value, nonce, gasPrice, gasValue, transaction.Data);
             var hex = tr.GetRLPEncoded().ToHex();
 

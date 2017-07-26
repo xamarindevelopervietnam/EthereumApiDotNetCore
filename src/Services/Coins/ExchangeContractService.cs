@@ -52,6 +52,7 @@ namespace Services.Coins
         bool CheckSign(Guid id, string coinAddress, string clientAddr, string toAddr, BigInteger amount, string sign);
         Task<bool> CheckLastTransactionCompleted(string coinAddress, string clientAddr);
         Task<CashoutOperationEstimationResult> EstimateCashoutGas(Guid id, string coinAdapterAddress, string fromAddress, string toAddress, BigInteger amount, string sign);
+        Task<string> ChangeMainContractInCoin(string coinAddress, string newExchangeContractAddress, string oldExchangeAddress);
     }
 
     public class ExchangeContractService : IExchangeContractService
@@ -98,7 +99,7 @@ namespace Services.Coins
 
         public bool IsValidAddress(string address)
         {
-            if (new Regex("!^(0x)?[0-9a-f]{40}$", RegexOptions.IgnoreCase).IsMatch(address))
+            if (!new Regex("^(0x)?[0-9a-f]{40}$", RegexOptions.IgnoreCase).IsMatch(address))
             {
                 // check if it has the basic requirements of an address
                 return false;
@@ -405,6 +406,18 @@ namespace Services.Coins
             }
 
             return response.SignedHash;
+        }
+
+        public async Task<string> ChangeMainContractInCoin(string coinAddress, string newExchangeContractAddress, string oldExchangeAddress)
+        {
+            var coinAFromDb = await GetCoinWithCheck(coinAddress);
+
+            var contract = _web3.Eth.GetContract(_settings.MainExchangeContract.Abi, oldExchangeAddress);
+            var transferFunction = contract.GetFunction("changeMainContractInCoin");
+            var transactionHash = await transferFunction.SendTransactionAsync(_settings.EthereumMainAccount,
+                    new HexBigInteger(Constants.GasForCoinTransaction), new HexBigInteger(0), coinAddress, newExchangeContractAddress);
+
+            return transactionHash;
         }
 
         private byte[] GetHash(Guid id, string coinAddress, string clientAddr, string toAddr, BigInteger amount)

@@ -17,7 +17,7 @@ namespace Services
 
         Task<decimal> GetUserContractBalance(string address);
 
-        Task<BigInteger> GetTransferContractBalanceInWei(string transferContractAddress);
+        Task<BigInteger> GetAddressBalanceInWei(string transferContractAddress);
 
         Task<string> SendEthereum(string fromAddress, string toAddress, BigInteger amont);
     }
@@ -49,7 +49,7 @@ namespace Services
             return UnitConversion.Convert.FromWei(balance);
         }
 
-        public async Task<BigInteger> GetTransferContractBalanceInWei(string address)
+        public async Task<BigInteger> GetAddressBalanceInWei(string address)
         {
             var balance = await _web3.Eth.GetBalance.SendRequestAsync(address);
 

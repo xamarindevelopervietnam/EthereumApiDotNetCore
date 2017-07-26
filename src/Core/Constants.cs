@@ -8,7 +8,8 @@
         /// </summary>
         public static string StoragePrefix { get; set; } = "";
 
-        public const string EmptyEthereumAddress = "0x0000000000000000000000000000000000000000";
+        public const string AddressForRoundRobinTransactionSending = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+        public const string EmptyEthereumAddress =                   "0x0000000000000000000000000000000000000000";
         public const string EventTraceTable = "EventTrace";
         public const string TransferContractUserAssignmentQueueName = "transfer-contract-user-assignment";
         public const string SlackNotifierQueue = "slack-notifications";
@@ -81,6 +82,8 @@
         public const string CashInEventTable = "CashInEvent";
         public const string PendingOperationsQueue = "pending-operations";
         public const string NonceCacheTable = "NonceCache";
+        public const string OwnerTable = "Owner";
+        public static string OwnerRepository;
     }
 
     public static class OperationTypes

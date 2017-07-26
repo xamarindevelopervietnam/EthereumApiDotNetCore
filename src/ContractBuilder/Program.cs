@@ -17,6 +17,9 @@ using SigningServiceApiCaller.Models;
 using Services.Coins;
 using RabbitMQ;
 using Common.Log;
+using Services.New;
+using Core.Repositories;
+using Core;
 
 namespace ContractBuilder
 {
@@ -32,6 +35,8 @@ namespace ContractBuilder
     }
     public class Program
     {
+        private static string _oldMainExchangeAddress;
+
         public static IServiceProvider ServiceProvider { get; set; }
 
         public static void Main(string[] args)
@@ -66,7 +71,7 @@ namespace ContractBuilder
             //var stringKey = Encoding.Unicode.GetString(key);
             GetAllContractInJson();
             ServiceProvider = collection.BuildServiceProvider();
-
+            ServiceProvider.ActivateRequestInterceptor();
             //var lykkeSigningAPI = ServiceProvider.GetService<ILykkeSigningAPI>();
             //lykkeSigningAPI.ApiEthereumAddkeyPost(new AddKeyRequest()
             //{
@@ -101,6 +106,9 @@ namespace ContractBuilder
                 Console.WriteLine("3. Deploy coin contract using local json file");
                 Console.WriteLine("4. Deploy transfer");
                 Console.WriteLine("5. Deploy BCAP Token");
+                Console.WriteLine("6. Deploy main exchange contract with multiple owners!");
+                Console.WriteLine("7. Add more owners to Main Exchange Contract with multiple owners!");
+                Console.WriteLine("8. Migrate Ethereum Adapter to New Main Exchange!");
                 Console.WriteLine("0. Exit");
 
                 var input = Console.ReadLine();
@@ -122,6 +130,15 @@ namespace ContractBuilder
                     case "5":
                         DeployBCAP().Wait();
                         break;
+                    case "6":
+                        DeployMainExchangeContractWithMultipleOwners().Wait();
+                        break;
+                    case "7":
+                        AddOwners().Wait();
+                        break;
+                    case "8":
+                        MigrateAdapter().Wait();
+                        break;
                     default:
                         Console.WriteLine("Bad input!");
                         continue;
@@ -134,7 +151,7 @@ namespace ContractBuilder
         private class EthereumContractExtended
         {
             public string EthereumContractName { get; set; }
-            public EthereumContract Contract { get; set; }
+            public Core.Settings.EthereumContract Contract { get; set; }
         }
 
         private static void GetAllContractInJson()
@@ -153,7 +170,7 @@ namespace ContractBuilder
                 ethereumContracts.Add(new EthereumContractExtended()
                 {
                     EthereumContractName = fi.Name,
-                    Contract = new EthereumContract()
+                    Contract = new Core.Settings.EthereumContract()
                     {
                         Abi = contentAbi,
                         ByteCode = byteCode,
@@ -205,7 +222,7 @@ namespace ContractBuilder
                 var bytecode = GetFileContent($"{transferName}.bin");
 
                 string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode, clientAddress);
-                settings.EthereumCore.TokenTransferContract = new EthereumContract
+                settings.EthereumCore.TokenTransferContract = new Core.Settings.EthereumContract
                 {
                     Address = contractAddress,
                     Abi = abi,
@@ -269,9 +286,9 @@ namespace ContractBuilder
                 var settings = GetCurrentSettings();
                 string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode, settings.EthereumCore.MainExchangeContract.Address);
                 if (settings.EthereumCore.CoinContracts == null)
-                    settings.EthereumCore.CoinContracts = new Dictionary<string, EthereumContract>();
+                    settings.EthereumCore.CoinContracts = new Dictionary<string, Core.Settings.EthereumContract>();
 
-                settings.EthereumCore.CoinContracts[name] = new EthereumContract { Address = contractAddress, Abi = abi };
+                settings.EthereumCore.CoinContracts[name] = new Core.Settings.EthereumContract { Address = contractAddress, Abi = abi };
 
                 Console.WriteLine("New coin contract: " + contractAddress);
 
@@ -296,7 +313,104 @@ namespace ContractBuilder
                 var bytecode = GetFileContent("MainExchange.bin");
                 string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode);
 
-                settings.EthereumCore.MainExchangeContract = new EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
+                settings.EthereumCore.MainExchangeContract = new Core.Settings.EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
+                Console.WriteLine("New main exchange contract: " + contractAddress);
+
+                SaveSettings(settings.EthereumCore);
+
+                Console.WriteLine("Contract address stored in generalsettings.json file");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Action failed!");
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        static async Task MigrateAdapter()
+        {
+            Console.WriteLine("Begin ethereum adapter migration process");
+            try
+            {
+                if (string.IsNullOrEmpty(_oldMainExchangeAddress))
+                {
+                    throw new Exception("New contract was not deployed");
+                }
+                var settings = GetCurrentSettings();
+                var exchangeService = ServiceProvider.GetService<IExchangeContractService>();
+                var ethereumTransactionService = ServiceProvider.GetService<IEthereumTransactionService>();
+                IEnumerable<ICoin> adapters = await ServiceProvider.GetService<ICoinRepository>().GetAll();
+                foreach (var adapter in adapters)
+                {
+                    string transactionHash = await exchangeService.ChangeMainContractInCoin(adapter.AdapterAddress, 
+                        settings.EthereumCore.MainExchangeContract.Address, _oldMainExchangeAddress);
+
+                    while (!await ethereumTransactionService.IsTransactionExecuted(transactionHash, Constants.GasForCoinTransaction))
+                    {
+                        await Task.Delay(400);
+                    }
+                }
+
+                Console.WriteLine("Coin adapters has been migrated");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Action failed!");
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        static async Task AddOwners()
+        {
+            Console.WriteLine("Begin adding owners to main exchange process");
+            try
+            {
+                var settings = GetCurrentSettings();
+                var exchangeService = ServiceProvider.GetService<IExchangeContractService>();
+                var ownerService = ServiceProvider.GetService<IOwnerService>();
+
+                Console.WriteLine("Put public addressses below, type -1 to commit owners to main exchange");
+                string input = "";
+                List<IOwner> owners = new List<IOwner>();
+                while (input != "-1")
+                {
+                    input = Console.ReadLine();
+                    if (exchangeService.IsValidAddress(input))
+                    {
+                        owners.Add(new Owner()
+                        {
+                            Address = input
+                        });
+                    }
+                    else if (input != "-1")
+                    {
+                        Console.WriteLine($"{input} is not a valid address");
+                    }
+                }
+                Console.WriteLine("Start commiting transaction!");
+                await ownerService.AddOwners(owners);
+                Console.WriteLine("Owners were added successfuly!");
+
+                Console.WriteLine("Completed");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Action failed!");
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        static async Task DeployMainExchangeContractWithMultipleOwners()
+        {
+            Console.WriteLine("Begin main exchange contract deployment process");
+            try
+            {
+                var settings = GetCurrentSettings();
+                var abi = GetFileContent("MainExchangeMultipleOwners.abi");
+                var bytecode = GetFileContent("MainExchangeMultipleOwners.bin");
+                string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode);
+                _oldMainExchangeAddress = settings.EthereumCore.MainExchangeContract.Address;
+                settings.EthereumCore.MainExchangeContract = new Core.Settings.EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
                 Console.WriteLine("New main exchange contract: " + contractAddress);
 
                 SaveSettings(settings.EthereumCore);
@@ -320,7 +434,7 @@ namespace ContractBuilder
                 var bytecode = GetFileContent("BCAPToken.bin");
                 string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode, settings.EthereumCore.EthereumMainAccount);
 
-                settings.EthereumCore.MainExchangeContract = new EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
+                settings.EthereumCore.MainExchangeContract = new Core.Settings.EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
                 Console.WriteLine("New BCAP Token: " + contractAddress);
 
                 SaveSettings(settings.EthereumCore);

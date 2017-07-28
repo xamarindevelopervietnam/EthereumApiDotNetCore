@@ -55,7 +55,7 @@ namespace ContractBuilder
             var configuration = configurationBuilder.Build();
 
             var settings = GetCurrentSettingsFromUrl();
-            SaveSettings(settings);
+            SaveSettings(settings.EthereumCore);
 
             IServiceCollection collection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             collection.AddSingleton<IBaseSettings>(settings.EthereumCore);

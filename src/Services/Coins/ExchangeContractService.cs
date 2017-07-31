@@ -434,6 +434,8 @@ namespace Services.Coins
             var transferFunction = contract.GetFunction("changeMainContractInCoin");
             var transactionHash = await transferFunction.SendTransactionAsync(_settings.EthereumMainAccount,
                     new HexBigInteger(Constants.GasForCoinTransaction), new HexBigInteger(0), coinAddress, newExchangeContractAddress);
+            //_settings.MainExchangeContract.Abi = newMainExchangeAbi;
+            //_settings.MainExchangeContract.Address = newExchangeContractAddress;
 
             return transactionHash;
         }

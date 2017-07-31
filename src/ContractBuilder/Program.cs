@@ -55,7 +55,7 @@ namespace ContractBuilder
             var configuration = configurationBuilder.Build();
 
             var settings = GetCurrentSettingsFromUrl();
-            SaveSettings(settings.EthereumCore);
+            SaveSettings(settings);
 
             IServiceCollection collection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             collection.AddSingleton<IBaseSettings>(settings.EthereumCore);
@@ -475,6 +475,7 @@ namespace ContractBuilder
                 //Console.WriteLine("Type new main exchange address:");
                 //string newMainExchangeAddress = Console.ReadLine().Trim().ToLower();
                 var settings = GetCurrentSettings();
+                var abi = GetFileContent("MainExchangeMultipleOwners.abi");
                 var exchangeService = ServiceProvider.GetService<IExchangeContractService>();
                 var ethereumTransactionService = ServiceProvider.GetService<IEthereumTransactionService>();
                 IEnumerable<ICoin> adapters = await ServiceProvider.GetService<ICoinRepository>().GetAll();
@@ -488,7 +489,7 @@ namespace ContractBuilder
                     {
                         await Task.Delay(400);
                     }
-                }
+                 }
 
                 IBaseSettings baseSettings = ServiceProvider.GetService<IBaseSettings>();
                 baseSettings.MainExchangeContract.Address = mainExchangeAddress;
@@ -538,6 +539,31 @@ namespace ContractBuilder
                 Console.WriteLine("Owners were added successfuly!");
 
                 Console.WriteLine("Completed");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Action failed!");
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        static async Task DeployMainExchangeContractWithMultipleOwners()
+        {
+            Console.WriteLine("Begin main exchange contract deployment process");
+            try
+            {
+                var settings = GetCurrentSettings();
+                var abi = GetFileContent("MainExchangeMultipleOwners.abi");
+                var bytecode = GetFileContent("MainExchangeMultipleOwners.bin");
+                string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode);
+                IBaseSettings baseSettings = ServiceProvider.GetService<IBaseSettings>();
+                _oldMainExchangeAddress = settings.EthereumCore.MainExchangeContract.Address;
+                settings.EthereumCore.MainExchangeContract = new Core.Settings.EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
+                Console.WriteLine("New main exchange contract: " + contractAddress);
+
+                SaveSettings(settings);
+
+                Console.WriteLine("Contract address stored in generalsettings.json file");
             }
             catch (Exception e)
             {

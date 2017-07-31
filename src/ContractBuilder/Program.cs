@@ -26,6 +26,10 @@ using Core.Repositories;
 using Nethereum.Util;
 using EthereumJobs.Job;
 using EthereumContract = Core.Settings.EthereumContract;
+using EthereumApi.Models;
+using System.Numerics;
+using Nethereum.Util;
+using EthereumJobs.Job;
 
 namespace ContractBuilder
 {
@@ -115,7 +119,8 @@ namespace ContractBuilder
                 Console.WriteLine("5. Deploy BCAP Token");
                 Console.WriteLine("6. Deploy main exchange contract with multiple owners!(Make sure that jobs are stopped)");
                 Console.WriteLine("7. Add more owners to Main Exchange Contract with multiple owners!(Add addresses with some eth on it)");
-                Console.WriteLine("8. Migrate Ethereum Adapter to New Main Exchange!");
+                Console.WriteLine("9. Deploy And Migrate To NM!");
+                Console.WriteLine("10. Send transaction to MainExchange!");
                 Console.WriteLine("9. Deploy And Migrate To NM!(Make sure that jobs are stopped)");
                 Console.WriteLine("10. Send transaction to MainExchange!(Make sure that jobs are stopped)");
                 Console.WriteLine("0. Exit");
@@ -145,8 +150,11 @@ namespace ContractBuilder
                     case "7":
                         AddOwners().Wait();
                         break;
-                    case "8":
-                        MigrateAdapter().Wait();
+                    //case "8":
+                    //    MigrateAdapter(,).Wait();
+                    //    break;
+                    case "9":
+                        DeployAndMigrateToNM().Wait();
                         break;
                     case "9":
                         DeployAndMigrateToNM().Wait();
@@ -489,7 +497,7 @@ namespace ContractBuilder
                     {
                         await Task.Delay(400);
                     }
-                 }
+                }
 
                 IBaseSettings baseSettings = ServiceProvider.GetService<IBaseSettings>();
                 baseSettings.MainExchangeContract.Address = mainExchangeAddress;
@@ -539,31 +547,6 @@ namespace ContractBuilder
                 Console.WriteLine("Owners were added successfuly!");
 
                 Console.WriteLine("Completed");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Action failed!");
-                Console.WriteLine(e.Message);
-            }
-        }
-
-        static async Task DeployMainExchangeContractWithMultipleOwners()
-        {
-            Console.WriteLine("Begin main exchange contract deployment process");
-            try
-            {
-                var settings = GetCurrentSettings();
-                var abi = GetFileContent("MainExchangeMultipleOwners.abi");
-                var bytecode = GetFileContent("MainExchangeMultipleOwners.bin");
-                string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode);
-                IBaseSettings baseSettings = ServiceProvider.GetService<IBaseSettings>();
-                _oldMainExchangeAddress = settings.EthereumCore.MainExchangeContract.Address;
-                settings.EthereumCore.MainExchangeContract = new Core.Settings.EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
-                Console.WriteLine("New main exchange contract: " + contractAddress);
-
-                SaveSettings(settings);
-
-                Console.WriteLine("Contract address stored in generalsettings.json file");
             }
             catch (Exception e)
             {

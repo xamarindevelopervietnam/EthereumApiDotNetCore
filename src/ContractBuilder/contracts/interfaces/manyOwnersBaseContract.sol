@@ -4,5 +4,5 @@ contract ManyOwnersBaseContract {
 
     function addOwners(address[] owners) returns (bool isOk);
     function removeOwners(address[] owners) returns (bool isOk);
-    function isOwner(address ownerAddress) returns (bool isOwner);
+    function isOwner(address ownerAddress) constant returns (bool isOwner);
 }

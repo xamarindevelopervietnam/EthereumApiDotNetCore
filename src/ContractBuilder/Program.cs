@@ -49,7 +49,7 @@ namespace ContractBuilder
             var configuration = configurationBuilder.Build();
 
             var settings = GetCurrentSettingsFromUrl();
-            SaveSettings(settings.EthereumCore);
+            SaveSettings(settings);
 
             IServiceCollection collection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             collection.AddSingleton<IBaseSettings>(settings.EthereumCore);
@@ -230,7 +230,7 @@ namespace ContractBuilder
                     ByteCode = bytecode
                 };
                 Console.WriteLine("New contract: " + contractAddress);
-                SaveSettings(settings.EthereumCore);
+                SaveSettings(settings);
 
                 Console.WriteLine("Contract address stored in generalsettings.json file");
             }
@@ -254,7 +254,7 @@ namespace ContractBuilder
 
                 Console.WriteLine("New contract: " + contractAddress);
 
-                SaveSettings(settings.EthereumCore);
+                SaveSettings(settings);
 
                 Console.WriteLine("Contract address stored in generalsettings.json file");
             }
@@ -293,7 +293,7 @@ namespace ContractBuilder
 
                 Console.WriteLine("New coin contract: " + contractAddress);
 
-                SaveSettings(settings.EthereumCore);
+                SaveSettings(settings);
 
                 Console.WriteLine("Contract address stored in generalsettings.json file");
             }
@@ -317,7 +317,7 @@ namespace ContractBuilder
                 settings.EthereumCore.MainExchangeContract = new Core.Settings.EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
                 Console.WriteLine("New main exchange contract: " + contractAddress);
 
-                SaveSettings(settings.EthereumCore);
+                SaveSettings(settings);
 
                 Console.WriteLine("Contract address stored in generalsettings.json file");
             }
@@ -333,24 +333,27 @@ namespace ContractBuilder
             Console.WriteLine("Begin ethereum adapter migration process");
             try
             {
-                if (string.IsNullOrEmpty(_oldMainExchangeAddress))
-                {
-                    throw new Exception("New contract was not deployed");
-                }
+                Console.WriteLine("Type new main exchange address:");
+                string newMainExchangeAddress = Console.ReadLine().Trim().ToLower();
                 var settings = GetCurrentSettings();
+                var abi = GetFileContent("MainExchangeMultipleOwners.abi");
                 var exchangeService = ServiceProvider.GetService<IExchangeContractService>();
                 var ethereumTransactionService = ServiceProvider.GetService<IEthereumTransactionService>();
                 IEnumerable<ICoin> adapters = await ServiceProvider.GetService<ICoinRepository>().GetAll();
                 foreach (var adapter in adapters)
                 {
-                    string transactionHash = await exchangeService.ChangeMainContractInCoin(adapter.AdapterAddress, 
-                        settings.EthereumCore.MainExchangeContract.Address, _oldMainExchangeAddress);
+                    string transactionHash = await exchangeService.ChangeMainContractInCoin(adapter.AdapterAddress,
+                        newMainExchangeAddress, abi);
 
                     while (!await ethereumTransactionService.IsTransactionExecuted(transactionHash, Constants.GasForCoinTransaction))
                     {
                         await Task.Delay(400);
                     }
-                }
+                 }
+
+                IBaseSettings baseSettings = ServiceProvider.GetService<IBaseSettings>();
+                baseSettings.MainExchangeContract.Address = newMainExchangeAddress;
+                baseSettings.MainExchangeContract.Abi = GetFileContent("MainExchangeMultipleOwners.abi");
 
                 Console.WriteLine("Coin adapters has been migrated");
             }
@@ -369,6 +372,9 @@ namespace ContractBuilder
                 var settings = GetCurrentSettings();
                 var exchangeService = ServiceProvider.GetService<IExchangeContractService>();
                 var ownerService = ServiceProvider.GetService<IOwnerService>();
+                IBaseSettings baseSettings = ServiceProvider.GetService<IBaseSettings>();
+                //baseSettings.MainExchangeContract.Address = "0xf5f0f53f86b7a5a92f150b1cf0edc12969b51f7e";
+                baseSettings.MainExchangeContract.Abi = GetFileContent("MainExchangeMultipleOwners.abi");
 
                 Console.WriteLine("Put public addressses below, type -1 to commit owners to main exchange");
                 string input = "";
@@ -410,11 +416,12 @@ namespace ContractBuilder
                 var abi = GetFileContent("MainExchangeMultipleOwners.abi");
                 var bytecode = GetFileContent("MainExchangeMultipleOwners.bin");
                 string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode);
+                IBaseSettings baseSettings = ServiceProvider.GetService<IBaseSettings>();
                 _oldMainExchangeAddress = settings.EthereumCore.MainExchangeContract.Address;
                 settings.EthereumCore.MainExchangeContract = new Core.Settings.EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
                 Console.WriteLine("New main exchange contract: " + contractAddress);
 
-                SaveSettings(settings.EthereumCore);
+                SaveSettings(settings);
 
                 Console.WriteLine("Contract address stored in generalsettings.json file");
             }
@@ -438,7 +445,7 @@ namespace ContractBuilder
                 settings.EthereumCore.MainExchangeContract = new Core.Settings.EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
                 Console.WriteLine("New BCAP Token: " + contractAddress);
 
-                SaveSettings(settings.EthereumCore);
+                SaveSettings(settings);
 
                 Console.WriteLine("Contract address stored in generalsettings.json file");
             }
@@ -474,13 +481,13 @@ namespace ContractBuilder
                 .AddEnvironmentVariables();
             var configuration = builder.Build();
             var connString = configuration.GetConnectionString("ConnectionString");
-            var path = @"..\..\..\generalsettings.json";
+            var path = GetSettingsPath();
             var settings = GeneralSettingsReader.ReadGeneralSettingsLocal<SettingsWrapper>(path);
 
             return settings;
         }
 
-        static void SaveSettings(BaseSettings settings)
+        static void SaveSettings(SettingsWrapper settings)
         {
             File.WriteAllText(GetSettingsPath(), JsonConvert.SerializeObject(settings, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
         }

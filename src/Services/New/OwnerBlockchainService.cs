@@ -38,7 +38,7 @@ namespace Services.New
             var addOwners = contract.GetFunction("addOwners");
             var ownerAddresses = owners.Select(x => x.Address).ToArray();
             var transactionHash = await addOwners.SendTransactionAsync(_baseSettings.EthereumMainAccount,
-                        new HexBigInteger(Constants.GasForCoinTransaction), new HexBigInteger(0), ownerAddresses);
+                        new HexBigInteger(Constants.GasForCoinTransaction), new HexBigInteger(0), new object[] { ownerAddresses });
 
             return transactionHash;
         }

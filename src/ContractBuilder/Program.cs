@@ -119,8 +119,6 @@ namespace ContractBuilder
                 Console.WriteLine("5. Deploy BCAP Token");
                 Console.WriteLine("6. Deploy main exchange contract with multiple owners!(Make sure that jobs are stopped)");
                 Console.WriteLine("7. Add more owners to Main Exchange Contract with multiple owners!(Add addresses with some eth on it)");
-                Console.WriteLine("9. Deploy And Migrate To NM!");
-                Console.WriteLine("10. Send transaction to MainExchange!");
                 Console.WriteLine("9. Deploy And Migrate To NM!(Make sure that jobs are stopped)");
                 Console.WriteLine("10. Send transaction to MainExchange!(Make sure that jobs are stopped)");
                 Console.WriteLine("0. Exit");
@@ -483,7 +481,6 @@ namespace ContractBuilder
                 //Console.WriteLine("Type new main exchange address:");
                 //string newMainExchangeAddress = Console.ReadLine().Trim().ToLower();
                 var settings = GetCurrentSettings();
-                var abi = GetFileContent("MainExchangeMultipleOwners.abi");
                 var exchangeService = ServiceProvider.GetService<IExchangeContractService>();
                 var ethereumTransactionService = ServiceProvider.GetService<IEthereumTransactionService>();
                 IEnumerable<ICoin> adapters = await ServiceProvider.GetService<ICoinRepository>().GetAll();

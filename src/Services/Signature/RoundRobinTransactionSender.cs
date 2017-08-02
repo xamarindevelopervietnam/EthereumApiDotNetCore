@@ -37,7 +37,7 @@ namespace Services.Signature
             _baseSettings = baseSettings;
             _ownerService = ownerService;
             _web3 = web3;
-            _lastOwnersCheck = DateTime.UtcNow;
+            _lastOwnersCheck = DateTime.UtcNow.AddMinutes(-5);
             _roundRobinSemaphore = new SemaphoreSlim(1, 1);
             _ownerNonceDictionary = new Dictionary<string, BigInteger>();
             _ownerSemaphoreDictionary = new Dictionary<string, SemaphoreSlim>();
@@ -65,6 +65,7 @@ namespace Services.Signature
                             _ownerNonceDictionary.Remove(ownerAddress);
                         }
                     }
+                    _lastOwnersCheck = DateTime.UtcNow;
                 }
 
                 currentOwner = _owners[_currentOwnerIndex];

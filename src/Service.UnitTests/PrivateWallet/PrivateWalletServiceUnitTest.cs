@@ -50,8 +50,14 @@ namespace Service.UnitTests.PrivateWallet
             _signatureChecker = Config.Services.GetService<ISignatureChecker>();
             #region SetupMockWeb3
 
-            _client.Setup(x => x.SendRequestAsync(It.IsAny<Nethereum.JsonRpc.Client.RpcRequest>(), It.IsAny<string>()))
-                .Returns(Task.FromResult(new RpcResponse(null, (JToken)null)));
+            //Task<T> SendRequestAsync<T>(RpcRequest request, string route = null);
+            //Task<T> SendRequestAsync<T>(string method, string route = null, params object[] paramList);
+            //Task SendRequestAsync(RpcRequest request, string route = null);
+            //Task SendRequestAsync(string method, string route = null, params object[] paramList);
+            _client.Setup(x => x.SendRequestAsync<string>(It.IsAny<Nethereum.JsonRpc.Client.RpcRequest>(), It.IsAny<string>()))
+                .Returns(Task.FromResult("")).Verifiable();
+            _client.Setup(x => x.SendRequestAsync<string>(It.IsAny<Nethereum.JsonRpc.Client.RpcRequest>(), null))
+                .Returns(Task.FromResult("")).Verifiable();
             _web3Mock.Setup(x => x.Client).Returns(_client.Object);
             _web3Mock.Setup(x => x.Eth).Returns(new Nethereum.Contracts.EthApiContractService(_client.Object));
             _paymentServiceMock.Setup(x => x.GetAddressBalancePendingInWei(TestConstants.PW_ADDRESS))

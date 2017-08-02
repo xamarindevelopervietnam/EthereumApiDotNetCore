@@ -1,4 +1,6 @@
-﻿namespace Core
+﻿using System.Numerics;
+
+namespace Core
 {
     public class Constants
     {
@@ -84,6 +86,7 @@
         public const string NonceCacheTable = "NonceCache";
         public const string OwnerTable = "Owner";
         public static string OwnerRepository;
+        public static BigInteger DefaultTransactionGas = 21000;
     }
 
     public static class OperationTypes

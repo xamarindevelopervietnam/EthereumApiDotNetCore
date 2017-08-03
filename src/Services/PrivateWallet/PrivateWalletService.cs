@@ -60,6 +60,7 @@ namespace Services.PrivateWallet
             _paymentService               = paymentService;
             _transactionValidationService = transactionValidationService;
             _erc20Service                 = erc20Service;
+            _transactionValidationService = transactionValidationService;
         }
 
         public async Task<string> GetTransactionForSigning(EthTransaction ethTransaction)

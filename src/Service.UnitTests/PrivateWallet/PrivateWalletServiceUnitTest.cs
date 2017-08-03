@@ -38,6 +38,7 @@ namespace Service.UnitTests.PrivateWallet
         private Mock<IWeb3> _web3Mock;
         private Mock<IEthereumTransactionService> _ethereumTransactionServiceMock;
         private RawTransactionSubmitter _rawTransactionSubmitter;
+        private ITransactionValidationService _transactionValidationService;
 
         [TestInitialize]
         public void TestInit()
@@ -48,6 +49,7 @@ namespace Service.UnitTests.PrivateWallet
             _ethereumTransactionServiceMock = new Mock<IEthereumTransactionService>();
             _nonceCalc = (MockNonceCalculator)Config.Services.GetService<INonceCalculator>();
             _signatureChecker = Config.Services.GetService<ISignatureChecker>();
+            _transactionValidationService = Config.Services.GetService<ITransactionValidationService>();
             #region SetupMockWeb3
 
             //Task<T> SendRequestAsync<T>(RpcRequest request, string route = null);
@@ -69,7 +71,8 @@ namespace Service.UnitTests.PrivateWallet
                 _rawTransactionSubmitter,
                 _ethereumTransactionServiceMock.Object,
                 _paymentServiceMock.Object,
-                _signatureChecker);
+                _signatureChecker,
+                _transactionValidationService);
         }
 
         [TestMethod]
@@ -165,7 +168,8 @@ namespace Service.UnitTests.PrivateWallet
                 _rawTransactionSubmitter,
                 _ethereumTransactionServiceMock.Object,
                 _paymentServiceMock.Object,
-                _signatureChecker);
+                _signatureChecker,
+                _transactionValidationService);
 
             #endregion
 
@@ -206,7 +210,8 @@ namespace Service.UnitTests.PrivateWallet
                 _rawTransactionSubmitter,
                 _ethereumTransactionServiceMock.Object,
                 _paymentServiceMock.Object,
-                _signatureChecker);
+                _signatureChecker,
+                _transactionValidationService);
 
             #endregion
 

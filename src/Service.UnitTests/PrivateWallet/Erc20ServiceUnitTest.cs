@@ -36,13 +36,15 @@ namespace Service.UnitTests.PrivateWallet
         private MockNonceCalculator _nonceCalc;
         private Mock<IClient> _client;
         private ISignatureChecker _signatureChecker;
-
+        //TODO: FIX TESTS
         [TestInitialize]
         public void TestInit()
         {
             _client = new Mock<IClient>();
             Mock<IWeb3> web3Mock = new Mock<IWeb3>();
             Mock<IBaseSettings> baseSettings = new Mock<IBaseSettings>();
+            Mock<IErcInterfaceService> ercInterfaceService = new Mock<IErcInterfaceService>();
+            Mock<ITransactionValidationService> transactionValidationService = new Mock<ITransactionValidationService>();
             _signatureChecker = Config.Services.GetService<ISignatureChecker>();
             _nonceCalc = (MockNonceCalculator)Config.Services.GetService<INonceCalculator>();
             #region SetupMock
@@ -53,7 +55,8 @@ namespace Service.UnitTests.PrivateWallet
             web3Mock.Setup(x => x.Eth).Returns(new EthApiContractService(_client.Object));
             #endregion
             IRawTransactionSubmitter rawTransactionSubmitter = new RawTransactionSubmitter(web3Mock.Object, _signatureChecker);
-            _erc20Service = new Erc20Service(web3Mock.Object, _nonceCalc, baseSettings.Object, rawTransactionSubmitter);
+            _erc20Service = new Erc20Service(web3Mock.Object, _nonceCalc, baseSettings.Object, 
+                rawTransactionSubmitter, ercInterfaceService.Object, transactionValidationService.Object, _signatureChecker);
         }
 
         [TestMethod]

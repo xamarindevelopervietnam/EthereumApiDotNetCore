@@ -49,7 +49,7 @@ namespace Service.UnitTests.PrivateWallet
             _ethereumTransactionServiceMock = new Mock<IEthereumTransactionService>();
             _nonceCalc = (MockNonceCalculator)Config.Services.GetService<INonceCalculator>();
             _signatureChecker = Config.Services.GetService<ISignatureChecker>();
-            _transactionValidationService = Config.Services.GetService<ITransactionValidationService>();
+            
             #region SetupMockWeb3
 
             //Task<T> SendRequestAsync<T>(RpcRequest request, string route = null);
@@ -65,6 +65,8 @@ namespace Service.UnitTests.PrivateWallet
             _paymentServiceMock.Setup(x => x.GetAddressBalancePendingInWei(TestConstants.PW_ADDRESS))
                 .Returns(Task.FromResult(new BigInteger(700000000000000)));
             _rawTransactionSubmitter = new RawTransactionSubmitter(_web3Mock.Object, _signatureChecker);
+            _transactionValidationService = new TransactionValidationService(_paymentServiceMock.Object, 
+                _ethereumTransactionServiceMock.Object);
             #endregion
 
             _privateWalletService = new PrivateWalletService(_web3Mock.Object, _nonceCalc,
@@ -155,15 +157,17 @@ namespace Service.UnitTests.PrivateWallet
         }
 
         [TestMethod]
-        public async Task PrivateWalletServiceUnitTest_NotEnoughFundsAndCommitTransaction()
+        public async Task PrivateWalletServiceUnitTest_TransactionExistsFundsAndCommitTransaction()
         {
             #region MockSetup
 
             _ethereumTransactionServiceMock = new Mock<IEthereumTransactionService>();
             _ethereumTransactionServiceMock.Setup(x => x.GetTransactionReceipt(It.IsAny<string>()))
-                .Returns(Task.FromResult(new TransactionReceipt()));
+                .Returns(Task.FromResult<TransactionReceipt>(new TransactionReceipt()));
             _ethereumTransactionServiceMock.Setup(x => x.IsTransactionInPool(It.IsAny<string>()))
                 .Returns(Task.FromResult(true));
+            _transactionValidationService = new TransactionValidationService(_paymentServiceMock.Object,
+                _ethereumTransactionServiceMock.Object);
             _privateWalletService = new PrivateWalletService(_web3Mock.Object, _nonceCalc,
                 _rawTransactionSubmitter,
                 _ethereumTransactionServiceMock.Object,
@@ -199,13 +203,15 @@ namespace Service.UnitTests.PrivateWallet
         }
 
         [TestMethod]
-        public async Task PrivateWalletServiceUnitTestNotEnoughFundsAndCommitTransaction()
+        public async Task PrivateWalletServiceUnitTest_NotEnoughFundsAndCommitTransaction()
         {
             #region MockSetup
 
             _paymentServiceMock = new Mock<IPaymentService>();
             _paymentServiceMock.Setup(x => x.GetAddressBalancePendingInWei(TestConstants.PW_ADDRESS))
                 .Returns(Task.FromResult<BigInteger>(new BigInteger(100000000000000)));
+            _transactionValidationService = new TransactionValidationService(_paymentServiceMock.Object,
+                _ethereumTransactionServiceMock.Object);
             _privateWalletService = new PrivateWalletService(_web3Mock.Object, _nonceCalc,
                 _rawTransactionSubmitter,
                 _ethereumTransactionServiceMock.Object,

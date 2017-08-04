@@ -17,9 +17,9 @@ namespace Services.Transactions
     public class TransactionValidationService : ITransactionValidationService
     {
         private readonly IPaymentService _paymentService;
-        private readonly EthereumTransactionService _ethereumTransactionService;
+        private readonly IEthereumTransactionService _ethereumTransactionService;
 
-        public TransactionValidationService(IPaymentService paymentService, EthereumTransactionService ethereumTransactionService)
+        public TransactionValidationService(IPaymentService paymentService, IEthereumTransactionService ethereumTransactionService)
         {
             _ethereumTransactionService = ethereumTransactionService;
             _paymentService = paymentService;

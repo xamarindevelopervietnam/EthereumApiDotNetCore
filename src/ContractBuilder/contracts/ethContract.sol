@@ -1,16 +1,15 @@
 pragma solidity ^0.4.9;
 import "./coin.sol";
 
-contract EthCoin is Coin(0) {
+contract EthCoin is Coin {
 
-    function EthCoin(address exchangeContractAddress) Coin(exchangeContractAddress) { }
+    function EthCoin(address exchangeContractAddress, address depositAdminContract) Coin(exchangeContractAddress, depositAdminContract) {
+     }
 
-    function cashin(address receiver, uint amount) ownerOrTransferContract payable returns(bool){
-        var userAddress = transferContractUser[receiver];
-
+    function cashin(address userAddress, uint amount) onlyFromDepositContract payable returns(bool){
         coinBalanceMultisig[userAddress] += msg.value;
 
-        CoinCashIn(receiver, msg.value);
+        CoinCashIn(userAddress, msg.value);
         
         return true;
     }

@@ -36,7 +36,7 @@ namespace EthereumJobs.Config
             collection.AddSingleton<MonitoringCoinTransactionJob>();
             collection.AddSingleton<MonitoringTransferContracts>();
             collection.AddSingleton<MonitoringTransferTransactions>();
-            collection.AddSingleton<TransferContractPoolJob>();
+            collection.AddSingleton<DepositContractPoolJob>();
             collection.AddSingleton<TransferContractUserAssignmentJob>();
             collection.AddSingleton<PoolRenewJob>();
             collection.AddSingleton<PingContractsJob>();

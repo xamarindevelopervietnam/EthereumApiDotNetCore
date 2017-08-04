@@ -36,13 +36,15 @@ namespace Service.UnitTests.PrivateWallet
         private MockNonceCalculator _nonceCalc;
         private Mock<IClient> _client;
         private ISignatureChecker _signatureChecker;
-
+        //TODO: FIX TESTS
         [TestInitialize]
         public void TestInit()
         {
             _client = new Mock<IClient>();
             Mock<IWeb3> web3Mock = new Mock<IWeb3>();
             Mock<IBaseSettings> baseSettings = new Mock<IBaseSettings>();
+            Mock<IErcInterfaceService> ercInterfaceService = new Mock<IErcInterfaceService>();
+            Mock<ITransactionValidationService> transactionValidationService = new Mock<ITransactionValidationService>();
             _signatureChecker = Config.Services.GetService<ISignatureChecker>();
             _nonceCalc = (MockNonceCalculator)Config.Services.GetService<INonceCalculator>();
             #region SetupMock

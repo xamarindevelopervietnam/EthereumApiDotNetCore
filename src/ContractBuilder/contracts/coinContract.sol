@@ -2,19 +2,17 @@ pragma solidity ^0.4.9;
 import "./coin.sol";
 import "./token/erc20Contract.sol";
 
-contract ColorCoin is Coin(0){
+contract ColorCoin is Coin {
 
     address _externalTokenAddress;
 
-    function ColorCoin(address exchangeContractAddress, address externalTokenAddress) Coin(exchangeContractAddress) { 
+    function ColorCoin(address exchangeContractAddress, address externalTokenAddress, address depositAdminContract) Coin(exchangeContractAddress, depositAdminContract) { 
         _externalTokenAddress = externalTokenAddress;
     }
 
-    function cashin(address receiver, uint amount) ownerOrTransferContract payable returns(bool){
+    function cashin(address userAddress, uint amount) onlyFromDepositContract payable returns(bool){
         if (msg.value > 0) return false; 
         
-        var userAddress = transferContractUser[receiver];
-
         coinBalanceMultisig[userAddress] += amount;
 
         CoinCashIn(userAddress, amount);

@@ -10,10 +10,11 @@ namespace Core
         /// Used to change table and queue names in testing enviroment
         /// </summary>
         public static string StoragePrefix { get; set; } = "";
-
         public const string AddressForRoundRobinTransactionSending = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
         public const string EmptyEthereumAddress = "0x0000000000000000000000000000000000000000";
         public const string EventTraceTable = "EventTrace";
+        public const string DepositContractsAssignmentQueue = "deposit-contracts-user-assignment-queue";
+        public const string DepositContractsQueue = "deposit-contracts-queue";
         public const string TransferContractUserAssignmentQueueName = "transfer-contract-user-assignment";
         public const string SlackNotifierQueue = "slack-notifications";
         public const string EthereumContractQueue = "ethereum-contract-queue";
@@ -22,6 +23,7 @@ namespace Core
         public const string ContractPoolQueuePrefix = "ethereum-tc-pool";
         public const string CoinEventResubmittQueue = "ethereum-coin-event-resubmitt-queue";
         public const string CashinCompletedEventsQueue = "cashin-completed-events-queue";
+        public const string ContractDepositQueue = "ethereum-contract-deposit-queue";
 
         /// <summary>
         /// Used to internal monitoring of refill transactions

@@ -40,7 +40,7 @@ namespace EthereumJobs.Job
             _coinTransactionService = coinTransactionService;
         }
 
-        [TimerTrigger("0.00:00:30")]
+        [TimerTrigger("0.00:01:00")]
         public async Task Execute()
         {
             try

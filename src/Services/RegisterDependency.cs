@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Nethereum.RPC.TransactionManagers;
 using Nethereum.Web3;
 using Services.Coins;
+using Services.Erc20;
 using Services.New;
 using Services.PrivateWallet;
 using Services.Signature;
@@ -52,6 +53,7 @@ namespace Services
             services.AddSingleton<IOwnerService, OwnerService>();
             services.AddSingleton<IOwnerBlockchainService, OwnerBlockchainService>();
             services.AddSingleton<IRoundRobinTransactionSender, RoundRobinTransactionSender>();
+            services.AddSingleton<IErc20BalanceService, Erc20BalanceService>();
 
             //Uses HttpClient Inside -> singleton
             services.AddSingleton<ILykkeSigningAPI>((provider) =>

@@ -18,14 +18,10 @@ namespace Services
     public class DepositContractTransaction : QueueMessageBase
     {
         public string DepositContractAddress { get; set; }
-
         public string UserAddress { get; set; }
         public string CoinAdapterAddress { get; set; }
-
-        //System.Numerics.BigInteger
         public string Amount { get; set; }
         public DateTime CreateDt { get; set; }
-
     }
 
     public interface IDepositContractTransactionService

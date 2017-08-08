@@ -88,6 +88,11 @@ namespace AzureRepositories
 
             services.AddSingleton<IUserPaymentRepository>(provider => new UserPaymentRepository());
 
+            services.AddSingleton<IUserDepositWalletRepository>(provider => new UserDepositWalletRepository(
+           new AzureTableStorage<UserDepositWalletEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.UserDepositWalletTable,
+               provider.GetService<ILog>())
+               ));
+
             services.AddSingleton<IUserTransferWalletRepository>(provider => new UserTransferWalletRepository(
                new AzureTableStorage<UserTransferWalletEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.UserTransferWalletTable,
                    provider.GetService<ILog>())
@@ -114,6 +119,10 @@ namespace AzureRepositories
                     , provider.GetService<ILog>())
                 , new AzureTableStorage<AzureIndex>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.CoinTableInedex
                    , provider.GetService<ILog>()))));
+
+            services.AddSingleton<IErc20ContractRepository>((provider => new Erc20ContractRepository(
+                new AzureTableStorage<Erc20ContractEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.Erc20Table
+                    , provider.GetService<ILog>()))));
         }
 
         public static void RegisterAzureQueues(this IServiceCollection services, IBaseSettings settings, ISlackNotificationSettings slackNotificationSettings)

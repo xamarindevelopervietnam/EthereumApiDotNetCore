@@ -121,6 +121,7 @@ namespace ContractBuilder
                 Console.WriteLine("7. Add more owners to Main Exchange Contract with multiple owners!(Add addresses with some eth on it)");
                 Console.WriteLine("9. Deploy And Migrate To NM!(Make sure that jobs are stopped)");
                 Console.WriteLine("10. Send transaction to MainExchange!(Make sure that jobs are stopped)");
+                Console.WriteLine("11. Deploy deposit admin contract");
                 Console.WriteLine("0. Exit");
 
                 var input = Console.ReadLine();
@@ -159,6 +160,9 @@ namespace ContractBuilder
                         break;
                     case "10":
                         SendTransactionFromMainExchange().Wait();
+                        break;
+                    case "11":
+                        DeployDepositAdminContract().Wait();
                         break;
                     default:
                         Console.WriteLine("Bad input!");
@@ -345,6 +349,34 @@ namespace ContractBuilder
             {
                 Console.WriteLine("Action failed!");
                 Console.WriteLine(e.Message);
+            }
+        }
+
+        static async Task<string> DeployDepositAdminContract()
+        {
+            Console.WriteLine("Begin DeployDepositAdminContract process");
+            try
+            {
+                var settings = GetCurrentSettings();
+                var abi = GetFileContent("DepositAdminContract.abi");
+                var bytecode = GetFileContent("DepositAdminContract.bin");
+                string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode);
+                IBaseSettings baseSettings = ServiceProvider.GetService<IBaseSettings>();
+                
+                Console.WriteLine("New deposit admin contract address: " + contractAddress);
+
+                SaveSettings(settings);
+
+                Console.WriteLine("Contract address stored in generalsettings.json file");
+
+                return contractAddress;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Action failed!");
+                Console.WriteLine(e.Message);
+
+                return "";
             }
         }
 

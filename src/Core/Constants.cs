@@ -57,6 +57,7 @@ namespace Core
         public const string TransactionsTable = "Transactions";
         public const string CoinFiltersTable = "CoinFilters";
         public const string CoinTable = "CoinTable";
+        public const string Erc20Table = "Erc20"; 
         public const string CoinTableInedex = "CoinTableIndex";
 
         public const int GasForUserContractTransafer = 50000;
@@ -79,6 +80,7 @@ namespace Core
         public const string TransferContractTable = "TransferContract";
         public const string EthereumContractsBlob = "EthereumContracts";
         public const string UserTransferWalletTable = "UserTransferWallet";
+        public const string UserDepositWalletTable = "UserDepositWalletTable";
         public const string ExternalTokenTable = "ExternalToken";
         public const string CoinEventEntityTable = "CoinEventEntity";
         public const string UserPaymentHistoryTable = "UserPaymentHistory";

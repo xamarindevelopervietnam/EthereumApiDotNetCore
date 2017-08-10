@@ -282,6 +282,13 @@ namespace Tests
         }
 
         [TestMethod]
+        public async Task Test_ValidAddress()
+        {
+            var result = _exchangeService.IsValidAddress("0x9D480c6EF2F3e10E2361A8F5F2AaD0fbe5564b0e");
+            var result2 = _exchangeService.IsValidAddress("0x9d480c6ef2f3e10e2361a8f5f2aad0fbe5564b0e");
+        }
+
+        [TestMethod]
         public async Task TestCheckId_IsNotInList()
         {
             var guid = Guid.NewGuid();

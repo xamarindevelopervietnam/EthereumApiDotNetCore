@@ -49,7 +49,7 @@ namespace Services.PrivateWallet
         private readonly ITransactionValidationService _transactionValidationService;
         private readonly ISignatureChecker _signatureChecker;
 
-        public Erc20Service(IWeb3 web3, 
+        public Erc20PrivateWalletService(IWeb3 web3, 
             INonceCalculator nonceCalculator, 
             IBaseSettings settings,
             IRawTransactionSubmitter rawTransactionSubmitter,

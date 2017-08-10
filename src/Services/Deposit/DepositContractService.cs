@@ -23,6 +23,8 @@ namespace Services
         Task<string> SetUserAddressForDepositContract(string userAddress, string depositContractAddress);
 
         Task<IDepositContract> GetDepositContract(string userAddress);
+        Task<BigInteger> GetBalance(string depositContractAddress, string coinAdapterAddress);
+        Task<string> RecievePaymentFromTransferContract(string depositContractAddress, string coinAdapterAddress, BigInteger balance);
     }
 
     public class DepositContractService : IDepositContractService
@@ -58,38 +60,12 @@ namespace Services
         {
             string transactionHash;
 
-             transactionHash =
-                    await _contractService.CreateContractWithoutBlockchainAcceptance(_settings.DepositContract.Abi,
-                    _settings.DepositContract.ByteCode, _settings.EthereumAdapterAddress, _settings.DepositAdminContract.Address);
+            transactionHash =
+                   await _contractService.CreateContractWithoutBlockchainAcceptance(_settings.DepositContract.Abi,
+                   _settings.DepositContract.ByteCode, _settings.DepositAdminContract.Address);
 
             return transactionHash;
         }
-
-        //public async Task<string> CreateTransferContract(string userAddress)
-        //{
-        //    IDepositContract contract = await GetDepositContract(userAddress);
-
-        //    if (contract != null)
-        //    {
-        //        throw new ClientSideException(ExceptionType.EntityAlreadyExists, $"Transfer account for {userAddress} already exists");
-        //    }
-
-        //    ICoin coin = await GetCoinWithCheck(coinAdapterAddress);
-        //    string queueName = QueueHelper.GenerateQueueNameForContractPool(coinAdapterAddress);
-        //    ITransferContractQueueService transferContractQueueService = _transferContractQueueServiceFactory.Get(queueName);
-        //    ITransferContract transferContract = await transferContractQueueService.GetContract();
-        //    transferContract.UserAddress = userAddress;
-
-        //    await _depositContractRepository.SaveAsync(transferContract);
-        //    await _transferContractUserAssignmentQueueService.PushContract(new TransferContractUserAssignment()
-        //    {
-        //        TransferContractAddress = transferContract.ContractAddress,
-        //        UserAddress = userAddress,
-        //        CoinAdapterAddress = coin.AdapterAddress
-        //    });
-
-        //    return transferContract.ContractAddress;
-        //}
 
         public async Task<string> GetUserAddressForDepositContract(string depositContractAddress)
         {
@@ -103,13 +79,11 @@ namespace Services
             string adminAbi = _settings.DepositAdminContract.Abi;
 
             var contract = _web3.Eth.GetContract(adminAbi, _settings.DepositAdminContract.Address);
-            var function = contract.GetFunction("addDepositContractUser");
-            //function setTransferAddressUser(address userAddress, address transferAddress) onlyowner{
+            var function = contract.GetFunction("getDepositContractUser");
             string userAddress =
-                await function.CallAsync<string>("getDepositContractUser");
-            depositContract.UserAddress = userAddress;
-
-            await _depositContractRepository.SaveAsync(depositContract);
+                await function.CallAsync<string>(depositContractAddress);
+            //depositContract.UserAddress = userAddress;
+            //await _depositContractRepository.SaveAsync(depositContract);
 
             return userAddress;
         }
@@ -142,6 +116,60 @@ namespace Services
             IDepositContract contract = await _depositContractRepository.GetByUserAsync(userAddress);
 
             return contract;
+        }
+
+        public async Task<BigInteger> GetBalance(string depositContractAddress, string coinAdapterAddress)
+        {
+            ICoin coinDb = await _coinRepository.GetCoinByAddress(coinAdapterAddress);
+            BigInteger balance;
+            if (coinDb.ContainsEth)
+            {
+                balance = await _paymentService.GetAddressBalanceInWei(depositContractAddress);
+            }
+            else
+            {
+                balance = await _ercInterfaceService.GetBalanceForExternalTokenAsync(depositContractAddress, coinDb.ExternalTokenAddress);
+            }
+
+            return balance;
+        }
+
+        public async Task<string> RecievePaymentFromTransferContract(string depositContractAddress, string coinAdapterAddress, BigInteger balance)
+        {
+            ICoin coinDb = await _coinRepository.GetCoinByAddress(coinAdapterAddress);
+
+            if (!coinDb.BlockchainDepositEnabled)
+                throw new Exception("Coin must be payable");
+
+            Contract contract = _web3.Eth.GetContract(_settings.DepositContract.Abi, depositContractAddress);
+            Function cashinFunction;
+            object[] cashinParameters;
+            string transactionHash;
+            //take a look at depositContract.sol to understand how cashin works
+            if (coinDb.ContainsEth)
+            {
+                if (coinAdapterAddress.ToLower() == _settings.EthereumAdapterAddress.ToLower())
+                {
+                    cashinFunction = contract.GetFunction("cashin");
+                    cashinParameters = new object[] { _settings.EthereumAdapterAddress, balance };
+                }
+                else
+                {
+                    cashinFunction = contract.GetFunction("cashinEth");
+                    cashinParameters = new object[] { coinAdapterAddress, balance };
+                }
+            }
+            else
+            {
+                string erc20TokenAddress = coinDb.ExternalTokenAddress;
+                cashinFunction = contract.GetFunction("cashinTokens");
+                cashinParameters = new object[] { erc20TokenAddress, coinAdapterAddress, balance };
+            }
+
+            transactionHash = await cashinFunction.SendTransactionAsync(_settings.EthereumMainAccount,
+                    new HexBigInteger(Constants.GasForCoinTransaction), new HexBigInteger(0), cashinParameters);
+
+            return transactionHash;
         }
     }
 }

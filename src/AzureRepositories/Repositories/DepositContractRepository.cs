@@ -26,6 +26,7 @@ namespace AzureRepositories.Repositories
         public string UserAddress { get; set; }
         public string EthAdapterAddress { get; set; }
         public string AssignmentHash { get; set; }
+        public string LegacyEthAdapterAssignmentHash { get; set; }
 
         public static DepositContractEntity Create(IDepositContract depositContract)
         {
@@ -35,7 +36,8 @@ namespace AzureRepositories.Repositories
                 EthAdapterAddress = depositContract.EthAdapterAddress,
                 UserAddress = depositContract.UserAddress,
                 ContractAddress = depositContract.ContractAddress,
-                AssignmentHash = depositContract.AssignmentHash
+                AssignmentHash = depositContract.AssignmentHash,
+                LegacyEthAdapterAssignmentHash = depositContract.LegacyEthAdapterAssignmentHash,
             };
         }
     }

@@ -10,7 +10,16 @@ using System.Threading.Tasks;
 
 namespace Services
 {
-    public class AssetContractService
+    public interface IAssetContractService
+    {
+        Task<IEnumerable<ICoin>> GetAll();
+        Task<string> CreateCoinContract(ICoin coin);
+        Task<ICoin> GetById(string id);
+        Task<ICoin> GetByAddress(string adapterAddress);
+        Task<BigInteger> GetBalance(string coinAdapterAddress, string userAddress);
+    }
+
+        public class AssetContractService: IAssetContractService
     {
         private readonly ICoinRepository _coinRepository;
         private readonly IContractService _contractService;
@@ -55,7 +64,7 @@ namespace Services
             {
                 abi = _settings.EthAdapterContract.Abi;
                 byteCode = _settings.EthAdapterContract.ByteCode;
-                constructorParametes = new string[] { _settings.MainExchangeContract.Address };
+                constructorParametes = new string[] { _settings.MainExchangeContract.Address, _settings.DepositAdminContract.Address };
             }
             else
             {
@@ -67,7 +76,7 @@ namespace Services
                 //TODO: check that external exists
                 abi = _settings.TokenAdapterContract.Abi;
                 byteCode = _settings.TokenAdapterContract.ByteCode;
-                constructorParametes = new string[] { _settings.MainExchangeContract.Address, coin.ExternalTokenAddress };
+                constructorParametes = new string[] { _settings.MainExchangeContract.Address, coin.ExternalTokenAddress, _settings.DepositAdminContract.Address };
             }
 
             var deploymentInfo =
@@ -92,19 +101,6 @@ namespace Services
             var coin = await _coinRepository.GetCoinByAddress(adapterAddress);
 
             return coin;
-        }
-
-        public async Task<string> PingAdapterContract(string adapterAddress)
-        {
-            string abi = _settings.CoinAbi;
-
-            var contract = _web3.Eth.GetContract(abi, adapterAddress);
-            var function = contract.GetFunction("ping");
-            
-            string transactionHash =
-                await function.SendTransactionAsync(_settings.EthereumMainAccount);
-
-            return transactionHash;
         }
 
         public async Task<BigInteger> GetBalance(string coinAdapterAddress, string userAddress)

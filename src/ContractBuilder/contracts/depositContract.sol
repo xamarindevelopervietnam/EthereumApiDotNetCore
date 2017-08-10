@@ -6,15 +6,13 @@ import "./depositAdminContract.sol";
 
 contract DepositContract {
 
-    address _ethAdapterAddress;
     address _owner;
     address _depositAdminContract;
 
     modifier onlyowner { if (msg.sender == _owner) _; }
 
-    function DepositContract(address ethAdapterAddress, address depositAdminContract) {
+    function DepositContract(address depositAdminContract) {
         _owner = msg.sender;
-        _ethAdapterAddress = ethAdapterAddress;
         _depositAdminContract = depositAdminContract;
     }
 
@@ -25,37 +23,58 @@ contract DepositContract {
         _depositAdminContract = newDepositAdminContractAddress;
     }
 
-    function cashinTokens(address erc20TokenAddress, address tokenAdapterAddress) onlyowner {
+    //new token cashin workflow
+    function cashinTokens(address erc20TokenAddress, address tokenAdapterAddress, uint amount) onlyowner {
         var erc20Token = ERC20Interface(erc20TokenAddress);
         var tokenBalance = erc20Token.balanceOf(this);
 
-        if (tokenBalance <= 0) {
+        if (tokenBalance < amount) {
             throw;
         }
 
         var coin_contract = Coin(tokenAdapterAddress);
 
-        if (!erc20Token.transfer(tokenAdapterAddress, tokenBalance)) {
+        if (!erc20Token.transfer(tokenAdapterAddress, amount)) {
             throw;
         }
         
-        var depositAdmin = DepositAdminContract(_depositAdminContract);
-        address userAddress = depositAdmin.getDepositContractUser(this);
+        address userAddress = getDepositContractUser();
 
-        if (!coin_contract.cashin(userAddress, tokenBalance)) {
+        if (!coin_contract.cashin(userAddress, amount)) {
             throw;
         }
     }
 
-    //old cashin workflow
-    function cashin() onlyowner {
-        if (this.balance <= 0) {
+    //new cashin workflow
+    function cashinEth(address ethAdapterAddress, uint amount) onlyowner {
+        if (this.balance < amount) {
             throw;
         }
 
-        var coin_contract = Coin(_ethAdapterAddress);
-        if (!coin_contract.cashin.value(this.balance)(this, this.balance)){
+        address userAddress = getDepositContractUser();
+        var coin_contract = Coin(ethAdapterAddress);
+        if (!coin_contract.cashin.value(this.balance)(userAddress, amount)){
             throw;
         }
+    }
+
+    //old cashin workflow for old adapter.
+    //TODO: Remove that method after migration and update config accordingly
+    function cashin(address ethAdapterAddress, uint amount) onlyowner {
+        if (this.balance < amount) {
+            throw;
+        }
+
+        var coin_contract = Coin(ethAdapterAddress);
+        if (!coin_contract.cashin.value(this.balance)(this, amount)){
+            throw;
+        }
+    }
+
+    function getDepositContractUser() private returns(address user){
+        var depositAdmin = DepositAdminContract(_depositAdminContract);
+        address userAddress = depositAdmin.getDepositContractUser(this);
+
+        return userAddress;
     }
 }

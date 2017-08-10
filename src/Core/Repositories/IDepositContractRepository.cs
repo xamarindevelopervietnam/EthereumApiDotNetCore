@@ -11,6 +11,7 @@ namespace Core.Repositories
         string UserAddress { get; set; }
         string EthAdapterAddress { get; set; }
         string AssignmentHash { get; set; }
+        string LegacyEthAdapterAssignmentHash { get; set; }
     }
 
     public class DepositContract : IDepositContract
@@ -19,6 +20,7 @@ namespace Core.Repositories
         public string UserAddress { get; set; }
         public string EthAdapterAddress { get; set; }
         public string AssignmentHash { get; set; }
+        public string LegacyEthAdapterAssignmentHash { get; set; }
     }
 
     public interface IDepositContractRepository

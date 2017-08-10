@@ -24,25 +24,29 @@ namespace Services
     public class DepositContractUserAssignmentQueueService : IDepositContractUserAssignmentQueueService
     {
         private readonly IQueueExt _queue;
-        private readonly ITransferContractRepository _transferContractRepository;
+        private readonly IDepositContractRepository _depositContractRepository;
         private readonly ISlackNotifier _slackNotifier;
         private readonly IBaseSettings _settings;
         private readonly Web3 _web3;
+        private readonly IDepositContractService _depositContractService;
+        private readonly ICoinRepository _coinRepository;
 
         public DepositContractUserAssignmentQueueService(IQueueFactory queueFactory,
-            ITransferContractRepository transferContractRepository,
-            IBaseSettings settings, Web3 web3)
+            IDepositContractRepository depositContractRepository,
+            IBaseSettings settings, Web3 web3, IDepositContractService depositContractService,
+            ICoinRepository coinRepository)
         {
+            _coinRepository = coinRepository;
             _web3 = web3;
-            _transferContractRepository = transferContractRepository;
+            _depositContractRepository = depositContractRepository;
             _queue = queueFactory.Build(Constants.DepositContractsAssignmentQueue);
             _settings = settings;
+            _depositContractService = depositContractService;
         }
 
         public async Task PushContract(DepositContractUserAssignment transferContract)
         {
             string transferContractSerialized = Newtonsoft.Json.JsonConvert.SerializeObject(transferContract);
-
             await _queue.PutRawMessageAsync(transferContractSerialized);
         }
 
@@ -53,17 +57,48 @@ namespace Services
 
         public async Task CompleteAssignment(DepositContractUserAssignment assignment)
         {
-            //var ethereumContract = _web3.Eth.GetContract(coinAbi, assignment.CoinAdapterAddress);
-            //var function = ethereumContract.GetFunction("setTransferAddressUser");
-            ////function setTransferAddressUser(address userAddress, address transferAddress) onlyowner{
+            var depositContract = await _depositContractRepository.GetByAddressAsync(assignment.DepositContractAddress);
+            string depositContractAddress = assignment.DepositContractAddress;
+            string userAddress = assignment.UserAddress;
+            string depositContractAssignmentHash =
+                await _depositContractService.SetUserAddressForDepositContract(userAddress, depositContractAddress);
 
-            //string transactionHash =
-            //    await function.SendTransactionAsync(_settings.EthereumMainAccount,
-            //    assignment.UserAddress, assignment.TransferContractAddress);
-            //var transferContract = await _transferContractRepository.GetAsync(assignment.TransferContractAddress);
-            //transferContract.AssignmentHash = transactionHash;
+            string coinAdapterAddress = _settings.EthereumAdapterAddress;
+             ICoin coinAdapter = await _coinRepository.GetCoinByAddress(coinAdapterAddress);
+            if (coinAdapter == null)
+            {
+                throw new Exception($"CoinAdapterAddress {coinAdapterAddress} does not exis");
+            }
 
-            //await _transferContractRepository.SaveAsync(transferContract);
+            string coinAbi;
+            if (coinAdapter.ContainsEth)
+            {
+                coinAbi = _settings.EthAdapterContract.Abi;
+            }
+            else
+            {
+                coinAbi = _settings.TokenAdapterContract.Abi;
+            }
+
+            var ethereumContract = _web3.Eth.GetContract(coinAbi, coinAdapterAddress);
+            var function = ethereumContract.GetFunction("setTransferAddressUser");
+
+            string transactionHash =
+                await function.SendTransactionAsync(_settings.EthereumMainAccount,
+                userAddress, depositContractAddress);
+
+            depositContract.AssignmentHash = depositContractAssignmentHash;
+            depositContract.LegacyEthAdapterAssignmentHash = transactionHash;
+        }
+
+        public async Task<string> GetUserOnLegacyAdapter(string adapterContractAddress, string depositContract)
+        {
+            var coinAFromDb = await _coinRepository.GetCoinByAddress(adapterContractAddress);
+            string abi = coinAFromDb.ContainsEth ? _settings.EthAdapterContract.Abi : _settings.TokenAdapterContract.Abi;
+            var contract = _web3.Eth.GetContract(abi, coinAFromDb.AdapterAddress);
+            var balance = contract.GetFunction("getTransferAddressUser");
+
+            return await balance.CallAsync<string>(depositContract);
         }
     }
 }

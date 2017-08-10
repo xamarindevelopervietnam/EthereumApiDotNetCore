@@ -60,21 +60,20 @@ contract Coin {
 
         return userAddress;
     }
-    //function getTransferAddressUser(address transferAddress) constant returns(address){
-    //     var userAddress = transferContractUser[transferAddress];
-//
-  //       return userAddress;
-    //}
 
-    //function setTransferAddressUser(address userAddress, address transferAddress) onlyowner{
-      //   var oldUserAddress = transferContractUser[transferAddress];
-         //
-        // if (oldUserAddress != address(0)) {
-        //     throw;
-        // }
-//
-  //       transferContractUser[transferAddress] = userAddress;
-   // }
+    //Old methods needs to be here in order to use the same abi for new and old contracts
+    function getTransferAddressUser(address transferAddress) constant returns(address){
+         var userAddress = getDepositContractUser(transferAddress);
+
+       return userAddress;
+    }
+
+    function setTransferAddressUser(address userAddress, address transferAddress) onlyowner{
+        var depositContractAdmin = DepositAdminContract(_depositAdminContract);
+        if (!depositContractAdmin.addDepositContractUser(transferAddress, userAddress)){
+            throw;
+        }
+    }
 
     function changeDepositAdminContract(address newDepositAdminContractAddress) onlyowner {
         _depositAdminContract = newDepositAdminContractAddress;

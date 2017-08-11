@@ -31,7 +31,7 @@ namespace EthereumJobs.Config
 
         public static void RegisterJobs(IServiceCollection collection)
         {
-            #region NewJobs
+            #region CoreJobs
 
             collection.AddSingleton<MonitoringJob>();
             collection.AddSingleton<MonitoringCoinTransactionJob>();
@@ -44,9 +44,38 @@ namespace EthereumJobs.Config
             collection.AddSingleton<TransferTransactionQueueJob>();
             collection.AddSingleton<MonitoringOperationJob>();
             collection.AddSingleton<CashinIndexingJob>();
+            //collection.AddSingleton<MonitoringJob>();
+            //collection.AddSingleton<PingContractsJob>();
+            //Uncomment 2
+            //collection.AddSingleton<MonitoringCoinTransactionJob>();
+            //collection.AddSingleton<MonitoringOperationJob>();
+            //collection.AddSingleton<CashinIndexingJob>();
+
             collection.AddSingleton<CoinEventResubmittJob>();
             
             #endregion
+            #region DepositJobs
+
+            //collection.AddSingleton<DepositContractPoolJob>();
+            collection.AddSingleton<DepositContractUserAssignmentJob>();
+            //collection.AddSingleton<DepositPoolRenewJob>();
+            //collection.AddSingleton<DepositTransactionQueueJob>();
+            //collection.AddSingleton<MonitoringDepositContractsJob>();
+            //collection.AddSingleton<MonitoringDepositTransactionsJob>();
+
+            #endregion
+
+            #region TransaferJobs
+
+            //Uncomment
+            //collection.AddSingleton<MonitoringTransferContracts>();
+            //collection.AddSingleton<MonitoringTransferTransactions>();
+            //collection.AddSingleton<TransferContractUserAssignmentJob>();
+            //collection.AddSingleton<PoolRenewJob>();
+            //collection.AddSingleton<TransferTransactionQueueJob>();
+
+            #endregion
+
         }
     }
 }

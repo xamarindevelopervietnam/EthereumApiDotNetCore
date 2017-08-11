@@ -13,13 +13,13 @@ using Core;
 
 namespace EthereumJobs.Job
 {
-    public class MonitoringDepositTransactions
+    public class MonitoringDepositTransactionsJob
     {
         private readonly ILog _logger;
         private readonly IDepositContractTransactionService _depositContractTransactionService;
         private readonly IBaseSettings _settings;
 
-        public MonitoringDepositTransactions(IBaseSettings settings,
+        public MonitoringDepositTransactionsJob(IBaseSettings settings,
             ILog logger,
             IDepositContractTransactionService depositContractTransactionService
             )

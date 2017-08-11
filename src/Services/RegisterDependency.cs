@@ -49,17 +49,29 @@ namespace Services
             services.AddSingleton<IEthereumIndexerService, EthereumIndexerService>();
             services.AddSingleton<ISignatureChecker, SignatureChecker>();
             services.AddSingleton<IRawTransactionSubmitter, RawTransactionSubmitter>();
-            services.AddSingleton<IErc20PrivateWalletService, Erc20PrivateWalletService>();
             services.AddSingleton<IOwnerService, OwnerService>();
             services.AddSingleton<IOwnerBlockchainService, OwnerBlockchainService>();
             services.AddSingleton<IRoundRobinTransactionSender, RoundRobinTransactionSender>();
+
+            #region Erc20
+
+            services.AddSingleton<IErc20Service, Erc20Service>();
+            services.AddSingleton<IErc20PrivateWalletService, Erc20PrivateWalletService>();
             services.AddSingleton<IErc20BalanceService, Erc20BalanceService>();
             services.AddSingleton<ITransactionValidationService, TransactionValidationService>();
 
-            services.AddSingleton<IOwnerService, OwnerService>();
-            services.AddSingleton<IOwnerBlockchainService, OwnerBlockchainService>();
-            services.AddSingleton<IRoundRobinTransactionSender, RoundRobinTransactionSender>();
-            services.AddSingleton<IErc20BalanceService, Erc20BalanceService>();
+            #endregion
+
+            #region DepositContracts
+
+            services.AddSingleton<DepositContractPoolService>();
+            services.AddSingleton<IDepositAdminContractService, DepositAdminContractService>();
+            services.AddSingleton<IDepositContractQueueService, DepositContractQueueService>();
+            services.AddSingleton<IDepositContractService, DepositContractService>();
+            services.AddSingleton<IDepositContractTransactionService, DepositContractTransactionService>();
+            services.AddSingleton<IDepositContractUserAssignmentQueueService, DepositContractUserAssignmentQueueService>();
+
+            #endregion
 
             //Uses HttpClient Inside -> singleton
             services.AddSingleton<ILykkeSigningAPI>((provider) =>

@@ -20,7 +20,6 @@ namespace Services
         private static DateTime _lastWarningSentTime = DateTime.MinValue;
         private readonly IDepositContractService _depositContractService;
         private readonly ICoinRepository _coinRepository;
-        private readonly IDepositContractUserAssignmentQueueService _depositContractUserAssignmentQueueService;
         private readonly IDepositContractQueueService _depositContractQueueService;
 
         public DepositContractPoolService(
@@ -31,7 +30,6 @@ namespace Services
             ISlackNotifier slackNotifier,
             ICoinRepository coinRepository,
             ILog logger,
-            IDepositContractUserAssignmentQueueService depositContractUserAssignmentQueueService,
             IDepositContractQueueService depositContractQueueService)
         {
             _coinRepository = coinRepository;
@@ -41,7 +39,6 @@ namespace Services
             _paymentService = paymentService;
             _slackNotifier = slackNotifier;
             _logger = logger;
-            _depositContractUserAssignmentQueueService = depositContractUserAssignmentQueueService;
             _depositContractQueueService = depositContractQueueService;
         }
 
@@ -77,6 +74,7 @@ namespace Services
                             UserAddress = null,
                             EthAdapterAddress = _settings.EthereumAdapterAddress,
                             AssignmentHash = null,
+                            LegacyEthAdapterAssignmentHash = null,
                         });
                     }
 

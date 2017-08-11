@@ -14,6 +14,7 @@ namespace Services.Erc20
     {
         Task<IEnumerable<IErc20Contract>> GetAllAsync();
         Task AddSupportedErc20TokenAsync(IErc20Contract token);
+        Task DeleteAsync(string address);
     }
 
     public class Erc20Service : IErc20Service
@@ -41,6 +42,11 @@ namespace Services.Erc20
             }
 
             await _erc20ContractRepository.InsertOrReplaceAsync(token);
+        }
+
+        public async Task DeleteAsync(string address)
+        {
+            await _erc20ContractRepository.DeleteAsync(address);
         }
     }
 }

@@ -38,6 +38,11 @@ namespace AzureRepositories.Repositories
             _table = table;
         }
 
+        public async Task DeleteAsync(string address)
+        {
+            await _table.DeleteIfExistAsync(Erc20ContractEntity.Key, address);
+        }
+
         public async Task<IEnumerable<IErc20Contract>> GetAllAsync()
         {
             IEnumerable<IErc20Contract> all = await _table.GetDataAsync(Erc20ContractEntity.Key);

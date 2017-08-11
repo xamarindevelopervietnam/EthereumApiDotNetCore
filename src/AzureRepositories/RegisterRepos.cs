@@ -138,6 +138,12 @@ namespace AzureRepositories
             services.AddSingleton<IErc20ContractRepository>((provider => new Erc20ContractRepository(
                 new AzureTableStorage<Erc20ContractEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.Erc20Table
                     , provider.GetService<ILog>()))));
+
+            services.AddSingleton<IDepositContractRepository>((provider => new DepositContractRepository(
+                new AzureTableStorage<DepositContractEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.DepositContractsTable
+                    , provider.GetService<ILog>()),
+                new AzureTableStorage<AzureIndex>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.DepositContractsTable,
+                provider.GetService<ILog>()))));
         }
 
         public static void RegisterAzureQueues(this IServiceCollection services, IBaseSettings settings, ISlackNotificationSettings slackNotificationSettings)

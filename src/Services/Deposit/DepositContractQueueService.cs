@@ -20,14 +20,11 @@ namespace Services
     public class DepositContractQueueService : IDepositContractQueueService
     {
         private readonly IQueueExt _queue;
-        private readonly IDepositContractRepository _depositContractRepository;
         private readonly ISlackNotifier _slackNotifier;
         private readonly ICoinRepository _coinRepository;
 
-        public DepositContractQueueService(IQueueFactory queueFactory,
-            IDepositContractRepository depositContractRepository, ISlackNotifier slackNotifier)
+        public DepositContractQueueService(IQueueFactory queueFactory, ISlackNotifier slackNotifier)
         {
-            _depositContractRepository = depositContractRepository;
             _slackNotifier = slackNotifier;
             _queue = queueFactory.Build(Constants.DepositContractsQueue);
         }

@@ -10,8 +10,6 @@ using Common;
 using Lykke.JobTriggers.Triggers.Attributes;
 using Core;
 using Lykke.JobTriggers.Triggers.Bindings;
-using Services.Deposit;
-
 namespace EthereumJobs.Job
 {
     public class DepositContractUserAssignmentJob

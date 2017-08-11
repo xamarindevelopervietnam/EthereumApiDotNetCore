@@ -16,11 +16,11 @@ namespace Services
 {
     public interface IDepositContractService
     {
+        Task<string> AssignDepositContractToUserAsync(string userAddress);
+
         Task<string> CreateDepositContractTrHashWithoutUserAsync();
 
         Task<string> GetUserAddressForDepositContract(string depositContractAddress);
-
-        Task<string> SetUserAddressForDepositContract(string userAddress, string depositContractAddress);
 
         Task<IDepositContract> GetDepositContract(string userAddress);
         Task<BigInteger> GetBalance(string depositContractAddress, string coinAdapterAddress);
@@ -33,27 +33,27 @@ namespace Services
         private readonly IContractService _contractService;
         private readonly IBaseSettings _settings;
         private readonly IDepositContractRepository _depositContractRepository;
-        private readonly ITransferContractQueueServiceFactory _transferContractQueueServiceFactory;
-        private readonly ITransferContractUserAssignmentQueueService _transferContractUserAssignmentQueueService;
+        private readonly IDepositContractUserAssignmentQueueService _depositContractUserAssignmentQueueService;
         private readonly Web3 _web3;
         private readonly IPaymentService _paymentService;
         private readonly IErcInterfaceService _ercInterfaceService;
+        private readonly IDepositContractQueueService _depositContractQueueService;
 
         public DepositContractService(IContractService contractService,
             IDepositContractRepository depositContractRepository,
             IBaseSettings settings,
-            ITransferContractQueueServiceFactory transferContractQueueServiceFactory,
-            ITransferContractUserAssignmentQueueService transferContractUserAssignmentQueueService,
+            IDepositContractUserAssignmentQueueService depositContractUserAssignmentQueueService,
             IPaymentService paymentService,
-            Web3 web3)
+            Web3 web3,
+            IDepositContractQueueService depositContractQueueService)
         {
             _paymentService = paymentService;
             _web3 = web3;
             _contractService = contractService;
             _depositContractRepository = depositContractRepository;
             _settings = settings;
-            _transferContractQueueServiceFactory = transferContractQueueServiceFactory;
-            _transferContractUserAssignmentQueueService = transferContractUserAssignmentQueueService;
+            _depositContractUserAssignmentQueueService = depositContractUserAssignmentQueueService;
+            _depositContractQueueService = depositContractQueueService;
         }
 
         public async Task<string> CreateDepositContractTrHashWithoutUserAsync()
@@ -69,12 +69,7 @@ namespace Services
 
         public async Task<string> GetUserAddressForDepositContract(string depositContractAddress)
         {
-            IDepositContract depositContract = await _depositContractRepository.GetByAddressAsync(depositContractAddress);
-
-            if (depositContract == null)
-            {
-                throw new ClientSideException(ExceptionType.WrongParams, $"Transfer contract with address {depositContractAddress} does not exist");
-            }
+            IDepositContract depositContract = await GetDepositContractWithCheckAsync(depositContractAddress);
 
             string adminAbi = _settings.DepositAdminContract.Abi;
 
@@ -82,13 +77,29 @@ namespace Services
             var function = contract.GetFunction("getDepositContractUser");
             string userAddress =
                 await function.CallAsync<string>(depositContractAddress);
-            //depositContract.UserAddress = userAddress;
-            //await _depositContractRepository.SaveAsync(depositContract);
 
             return userAddress;
         }
 
-        public async Task<string> SetUserAddressForDepositContract(string userAddress, string depositContractAddress)
+        public async Task<string> AssignDepositContractToUserAsync(string userAddress)
+        {
+            IDepositContract depositContract = await _depositContractRepository.GetByUserAsync(userAddress);
+            if (depositContract == null)
+            {
+                depositContract = await _depositContractQueueService.GetContract();
+                depositContract.UserAddress = userAddress;
+                await _depositContractRepository.SaveAsync(depositContract);
+                await _depositContractUserAssignmentQueueService.PushContract(new DepositContractUserAssignment()
+                {
+                    DepositContractAddress = depositContract.ContractAddress,
+                    UserAddress = userAddress
+                });
+            }
+
+            return depositContract.ContractAddress;
+        }
+
+        private async Task<IDepositContract> GetDepositContractWithCheckAsync(string depositContractAddress)
         {
             IDepositContract depositContract = await _depositContractRepository.GetByAddressAsync(depositContractAddress);
 
@@ -97,18 +108,7 @@ namespace Services
                 throw new ClientSideException(ExceptionType.WrongParams, $"Transfer contract with address {depositContractAddress} does not exist");
             }
 
-            string adminAbi = _settings.DepositAdminContract.Abi;
-
-            var contract = _web3.Eth.GetContract(adminAbi, _settings.DepositAdminContract.Address);
-            var function = contract.GetFunction("addDepositContractUser");
-            //function setTransferAddressUser(address userAddress, address transferAddress) onlyowner{
-            string transaction =
-                await function.SendTransactionAsync(_settings.EthereumMainAccount, depositContractAddress, userAddress);
-            depositContract.UserAddress = userAddress;
-
-            await _depositContractRepository.SaveAsync(depositContract);
-
-            return transaction;
+            return depositContract;
         }
 
         public async Task<IDepositContract> GetDepositContract(string userAddress)
@@ -151,19 +151,19 @@ namespace Services
                 if (coinAdapterAddress.ToLower() == _settings.EthereumAdapterAddress.ToLower())
                 {
                     cashinFunction = contract.GetFunction("cashin");
-                    cashinParameters = new object[] { _settings.EthereumAdapterAddress, balance };
+                    cashinParameters = new object[] { _settings.EthereumAdapterAddress };
                 }
                 else
                 {
                     cashinFunction = contract.GetFunction("cashinEth");
-                    cashinParameters = new object[] { coinAdapterAddress, balance };
+                    cashinParameters = new object[] { coinAdapterAddress };
                 }
             }
             else
             {
                 string erc20TokenAddress = coinDb.ExternalTokenAddress;
                 cashinFunction = contract.GetFunction("cashinTokens");
-                cashinParameters = new object[] { erc20TokenAddress, coinAdapterAddress, balance };
+                cashinParameters = new object[] { erc20TokenAddress, coinAdapterAddress };
             }
 
             transactionHash = await cashinFunction.SendTransactionAsync(_settings.EthereumMainAccount,

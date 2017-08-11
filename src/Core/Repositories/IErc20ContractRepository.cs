@@ -24,5 +24,6 @@ namespace Core.Repositories
         Task<IErc20Contract> GetAsync(string address);
         Task InsertOrReplaceAsync(IErc20Contract erc20Contract);
         Task<IEnumerable<IErc20Contract>> GetAllAsync();
+        Task DeleteAsync(string address);
     }
 }

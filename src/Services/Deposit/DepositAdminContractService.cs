@@ -9,7 +9,7 @@ using AzureStorage.Queue;
 using Core.Exceptions;
 using Core.Utils;
 
-namespace Services.Deposit
+namespace Services
 {
     public class DepositContractUserAssignment : QueueMessageBase
     {

@@ -17,7 +17,7 @@ using BusinessModels.Erc20;
 
 namespace EthereumJobs.Job
 {
-    public class MonitoringDepositContracts
+    public class MonitoringDepositContractsJob
     {
         private readonly ILog _logger;
         private readonly IPaymentService _paymentService;
@@ -35,7 +35,7 @@ namespace EthereumJobs.Job
         private readonly IErc20BalanceService _erc20BalanceService;
         private readonly ICoinRepository _coinRepository;
 
-        public MonitoringDepositContracts(IBaseSettings settings,
+        public MonitoringDepositContractsJob(IBaseSettings settings,
             IErcInterfaceService ercInterfaceService,
             IDepositContractRepository depositContractRepository,
             ILog logger,
@@ -99,7 +99,8 @@ namespace EthereumJobs.Job
 
                         #region CheckErc20Balance
 
-                        IEnumerable<AddressTokenBalance> addressBalances = await _erc20BalanceService.GetBalancesForAddress(item.ContractAddress, supportedTokenAddresses);
+                        IEnumerable<AddressTokenBalance> addressBalances = 
+                        await _erc20BalanceService.GetBalancesForAddress(item.ContractAddress, supportedTokenAddresses);
                         IEnumerable<AddressTokenBalance> addressBalancesWithTokens = addressBalances.Where(x => x.Balance > 0);
                         foreach (var addressBalance in addressBalancesWithTokens)
                         {

@@ -47,7 +47,7 @@ namespace EthereumJobs.Config
             //collection.AddSingleton<MonitoringJob>();
             //collection.AddSingleton<PingContractsJob>();
             //Uncomment 2
-            //collection.AddSingleton<MonitoringCoinTransactionJob>();
+            collection.AddSingleton<MonitoringCoinTransactionJob>();
             //collection.AddSingleton<MonitoringOperationJob>();
             //collection.AddSingleton<CashinIndexingJob>();
 
@@ -57,9 +57,8 @@ namespace EthereumJobs.Config
             #region DepositJobs
 
             //collection.AddSingleton<DepositContractPoolJob>();
-            collection.AddSingleton<DepositContractUserAssignmentJob>();
+            //collection.AddSingleton<DepositContractUserAssignmentJob>();
             //collection.AddSingleton<DepositPoolRenewJob>();
-            //collection.AddSingleton<DepositTransactionQueueJob>();
             //collection.AddSingleton<MonitoringDepositContractsJob>();
             //collection.AddSingleton<MonitoringDepositTransactionsJob>();
 

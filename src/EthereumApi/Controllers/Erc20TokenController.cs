@@ -73,9 +73,9 @@ namespace EthereumApi.Controllers
         }
 
         [Route("{address}")]
-        [HttpPost]
+        [HttpDelete]
         [ProducesResponseType(typeof(void), 200)]
-        public async Task<IActionResult> CreateCoinAdapter([FromRoute] string address)
+        public async Task<IActionResult> DeleteToken([FromRoute] string address)
         {
             if (!ModelState.IsValid)
             {

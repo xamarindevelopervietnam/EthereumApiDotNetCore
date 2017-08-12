@@ -44,7 +44,7 @@ namespace Services
         private readonly ICoinEventService _coinEventService;
         private readonly IEventTraceRepository _eventTraceRepository;
 
-        public DepositContractTransactionService(Func<string, IQueueExt> queueFactory,
+        public DepositContractTransactionService(IQueueFactory queueFactory,
             ILog logger,
             IExchangeContractService coinContractService,
             IBaseSettings baseSettings,
@@ -60,7 +60,7 @@ namespace Services
             _eventTraceRepository = eventTraceRepository;
             _logger = logger;
             _baseSettings = baseSettings;
-            _queue = queueFactory(Constants.ContractTransferQueue);
+            _queue = queueFactory.Build(Constants.ContractDepositQueue);
             _depositContractRepository = depositContractRepository;
             _depositContractService = depositContractService;
             _userDepositWalletRepository = userDepositWalletRepository;

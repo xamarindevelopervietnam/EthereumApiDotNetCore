@@ -24,7 +24,7 @@ namespace Core
         public const string CoinEventResubmittQueue = "ethereum-coin-event-resubmitt-queue";
         public const string CashinCompletedEventsQueue = "cashin-completed-events-queue";
         public const string ContractDepositQueue = "ethereum-contract-deposit-queue";
-
+        public const string ContractDepositCashinQueue = "ethereum-contract-deposi-queue";
         /// <summary>
         /// Used to internal monitoring of refill transactions
         /// </summary>

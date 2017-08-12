@@ -45,7 +45,8 @@ namespace Services
             IDepositContractUserAssignmentQueueService depositContractUserAssignmentQueueService,
             IPaymentService paymentService,
             Web3 web3,
-            IDepositContractQueueService depositContractQueueService)
+            IDepositContractQueueService depositContractQueueService,
+            ICoinRepository coinRepository)
         {
             _paymentService = paymentService;
             _web3 = web3;
@@ -54,6 +55,7 @@ namespace Services
             _settings = settings;
             _depositContractUserAssignmentQueueService = depositContractUserAssignmentQueueService;
             _depositContractQueueService = depositContractQueueService;
+            _coinRepository = coinRepository;
         }
 
         public async Task<string> CreateDepositContractTrHashWithoutUserAsync()

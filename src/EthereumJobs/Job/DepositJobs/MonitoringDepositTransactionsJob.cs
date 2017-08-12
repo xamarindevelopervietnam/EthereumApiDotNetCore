@@ -29,7 +29,7 @@ namespace EthereumJobs.Job
             _depositContractTransactionService = depositContractTransactionService;
         }
 
-        [QueueTrigger(Constants.ContractTransferQueue, 100, true)]
+        [QueueTrigger(Constants.ContractDepositQueue, 100, true)]
         public async Task Execute(DepositContractTransaction transaction, QueueTriggeringContext context)
         {
             try

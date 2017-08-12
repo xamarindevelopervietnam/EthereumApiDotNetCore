@@ -20,6 +20,7 @@ namespace Services
         Task CompleteAssignment(DepositContractUserAssignment assignment);
         Task<string> GetUserOnLegacyAdapter(string adapterContractAddress, string depositContract);
         Task<string> SetUserToLegacyAdapter(string coinAdapterAddress, string depositContractAddress, string userAddress);
+        Task<string> SetUserAddressForDepositContract(string userAddress, string depositContractAddress);
     }
 
     public class DepositContractUserAssignmentQueueService : IDepositContractUserAssignmentQueueService
@@ -58,7 +59,7 @@ namespace Services
         {
             var depositContract = await _depositContractRepository.GetByAddressAsync(assignment.DepositContractAddress);
             string depositContractAddress = assignment.DepositContractAddress;
-            string userAddress = assignment.UserAddress;
+            string userAddress = assignment.UserAddress.ToLower();
             string depositContractAssignmentHash = await SetUserAddressForDepositContract(userAddress, depositContractAddress);
             string depositContractLegacyAssignmentHash = 
                 await SetUserToLegacyAdapter(_settings.EthereumAdapterAddress, depositContractAddress, userAddress);

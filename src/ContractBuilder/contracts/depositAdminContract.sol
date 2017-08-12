@@ -14,8 +14,8 @@ contract DepositAdminContract {
         _owner = msg.sender;
     }
 
-   function addDepositContractUser(address depositContractAddress, address userAddress) returns(bool isChanged){
-        if (depositContractUser[depositContractAddress] == address(0)){
+   function addDepositContractUser(address depositContractAddress, address userAddress) onlyowner returns(bool isChanged){
+        if (depositContractUser[depositContractAddress] != address(0)){
             return false;
         }
         

@@ -46,7 +46,8 @@ namespace AzureRepositories.Repositories
                 UpdateDate = userDepositWallet.UpdateDate,
                 UserAddress = userAddress,
                 DepositContractAddress = depositAddress,
-                LastBalance = userDepositWallet.LastBalance
+                LastBalance = userDepositWallet.LastBalance,
+                CoinAdapterAddress = userDepositWallet.CoinAdapterAddress
             };
         }
     }

@@ -101,51 +101,54 @@ namespace EthereumJobs.Job
 
                         IEnumerable<AddressTokenBalance> addressBalances = 
                         await _erc20BalanceService.GetBalancesForAddress(item.ContractAddress, supportedTokenAddresses);
-                        IEnumerable<AddressTokenBalance> addressBalancesWithTokens = addressBalances.Where(x => x.Balance > 0);
-                        foreach (var addressBalance in addressBalancesWithTokens)
+                        if (addressBalances != null && addressBalances.Count() > 0)
                         {
-                            BigInteger balance = addressBalance.Balance;
-
-                            if (balance > 0)
+                            IEnumerable<AddressTokenBalance> addressBalancesWithTokens = addressBalances.Where(x => x.Balance > 0);
+                            foreach (var addressBalance in addressBalancesWithTokens)
                             {
-                                ICoin coinAdapter = null;
-                                tokenAdapterDict.TryGetValue(addressBalance.Erc20TokenAddress, out coinAdapter);
-                                if (coinAdapter == null)
+                                BigInteger balance = addressBalance.Balance;
+
+                                if (balance > 0)
                                 {
-                                    await _logger.WriteInfoAsync("MonitoringDepositContracts", "Execute", "",
-                                        $"There is no adapter for erc20 Token {addressBalance.Erc20TokenAddress}", DateTime.UtcNow);
-
-                                    continue;
-                                }
-
-                                string coinAdapterAddress = coinAdapter.AdapterAddress;
-                                IUserDepositWallet wallet = await _userDepositWalletRepository.
-                                GetUserContractAsync(item.UserAddress, item.ContractAddress, coinAdapterAddress);
-                                if (wallet == null ||
-                                    string.IsNullOrEmpty(wallet.LastBalance) ||
-                                    wallet.LastBalance == "0")
-                                {
-                                    await _userDepositWalletRepository.ReplaceAsync(new UserDepositWallet()
+                                    ICoin coinAdapter = null;
+                                    tokenAdapterDict.TryGetValue(addressBalance.Erc20TokenAddress, out coinAdapter);
+                                    if (coinAdapter == null)
                                     {
-                                        LastBalance = balance.ToString(),
-                                        CoinAdapterAddress = coinAdapterAddress,
-                                        DepositContractAddress = item.ContractAddress,
-                                        UserAddress = item.UserAddress,
-                                        UpdateDate = DateTime.UtcNow
-                                    });
+                                        await _logger.WriteInfoAsync("MonitoringDepositContracts", "Execute", "",
+                                            $"There is no adapter for erc20 Token {addressBalance.Erc20TokenAddress}", DateTime.UtcNow);
 
-                                    await _depositContractTransactionService.PutContractTransferTransaction(new DepositContractTransaction()
+                                        continue;
+                                    }
+
+                                    string coinAdapterAddress = coinAdapter.AdapterAddress;
+                                    IUserDepositWallet wallet = await _userDepositWalletRepository.
+                                    GetUserContractAsync(item.UserAddress, item.ContractAddress, coinAdapterAddress);
+                                    if (wallet == null ||
+                                        string.IsNullOrEmpty(wallet.LastBalance) ||
+                                        wallet.LastBalance == "0")
                                     {
-                                        Amount = balance.ToString(),
-                                        UserAddress = item.UserAddress,
-                                        DepositContractAddress = item.ContractAddress,
-                                        CoinAdapterAddress = coinAdapterAddress,
-                                        CreateDt = DateTime.UtcNow
-                                    });
+                                        await _userDepositWalletRepository.ReplaceAsync(new UserDepositWallet()
+                                        {
+                                            LastBalance = balance.ToString(),
+                                            CoinAdapterAddress = coinAdapterAddress,
+                                            DepositContractAddress = item.ContractAddress,
+                                            UserAddress = item.UserAddress,
+                                            UpdateDate = DateTime.UtcNow
+                                        });
 
-                                    await _logger.WriteInfoAsync("MonitoringDepositContracts", "Execute", "", $"Balance on deposit contract address - {item.ContractAddress}" +
-                                        $" for adapter contract {coinAdapterAddress} is {balance}" +
-                                        $" transfer belongs to user {item.UserAddress}", DateTime.UtcNow);
+                                        await _depositContractTransactionService.PutContractTransferTransaction(new DepositContractTransaction()
+                                        {
+                                            Amount = balance.ToString(),
+                                            UserAddress = item.UserAddress,
+                                            DepositContractAddress = item.ContractAddress,
+                                            CoinAdapterAddress = coinAdapterAddress,
+                                            CreateDt = DateTime.UtcNow
+                                        });
+
+                                        await _logger.WriteInfoAsync("MonitoringDepositContracts", "Execute", "", $"Balance on deposit contract address - {item.ContractAddress}" +
+                                            $" for adapter contract {coinAdapterAddress} is {balance}" +
+                                            $" transfer belongs to user {item.UserAddress}", DateTime.UtcNow);
+                                    }
                                 }
                             }
                         }
@@ -161,28 +164,31 @@ namespace EthereumJobs.Job
                             string.IsNullOrEmpty(ethWallet.LastBalance) ||
                             ethWallet.LastBalance == "0")
                         {
-                            var ethBalance = _paymentService.GetAddressBalanceInWei(item.ContractAddress);
-                            await _userDepositWalletRepository.ReplaceAsync(new UserDepositWallet()
+                            var ethBalance = await _paymentService.GetAddressBalanceInWei(item.ContractAddress);
+                            if (ethBalance > 0)
                             {
-                                LastBalance = ethBalance.ToString(),
-                                CoinAdapterAddress = ethereumAdapterAddress,
-                                DepositContractAddress = item.ContractAddress,
-                                UserAddress = item.UserAddress,
-                                UpdateDate = DateTime.UtcNow
-                            });
+                                await _userDepositWalletRepository.ReplaceAsync(new UserDepositWallet()
+                                {
+                                    LastBalance = ethBalance.ToString(),
+                                    CoinAdapterAddress = ethereumAdapterAddress,
+                                    DepositContractAddress = item.ContractAddress,
+                                    UserAddress = item.UserAddress,
+                                    UpdateDate = DateTime.UtcNow
+                                });
 
-                            await _depositContractTransactionService.PutContractTransferTransaction(new DepositContractTransaction()
-                            {
-                                Amount = ethBalance.ToString(),
-                                UserAddress = item.UserAddress,
-                                DepositContractAddress = item.ContractAddress,
-                                CoinAdapterAddress = ethereumAdapterAddress,
-                                CreateDt = DateTime.UtcNow
-                            });
+                                await _depositContractTransactionService.PutContractTransferTransaction(new DepositContractTransaction()
+                                {
+                                    Amount = ethBalance.ToString(),
+                                    UserAddress = item.UserAddress,
+                                    DepositContractAddress = item.ContractAddress,
+                                    CoinAdapterAddress = ethereumAdapterAddress,
+                                    CreateDt = DateTime.UtcNow
+                                });
 
-                            await _logger.WriteInfoAsync("MonitoringDepositContracts", "Execute", "", $"Balance on deposit contract address - {item.ContractAddress}" +
-                                $" for adapter contract {ethereumAdapterAddress} is {ethBalance}" +
-                                $" transfer belongs to user {item.UserAddress}", DateTime.UtcNow);
+                                await _logger.WriteInfoAsync("MonitoringDepositContracts", "Execute", "", $"Balance on deposit contract address - {item.ContractAddress}" +
+                                    $" for adapter contract {ethereumAdapterAddress} is {ethBalance}" +
+                                    $" transfer belongs to user {item.UserAddress}", DateTime.UtcNow);
+                            }
                         }
                     }
 

@@ -34,8 +34,8 @@ namespace AzureRepositories.Repositories
             {
                 PartitionKey = GenerateParitionKey(),
                 EthAdapterAddress = depositContract.EthAdapterAddress,
-                UserAddress = depositContract.UserAddress,
-                ContractAddress = depositContract.ContractAddress,
+                UserAddress = depositContract.UserAddress.ToLower(),
+                ContractAddress = depositContract.ContractAddress.ToLower(),
                 AssignmentHash = depositContract.AssignmentHash,
                 LegacyEthAdapterAssignmentHash = depositContract.LegacyEthAdapterAssignmentHash,
             };
@@ -69,6 +69,7 @@ namespace AzureRepositories.Repositories
 
         public async Task<IDepositContract> GetByAddressAsync(string depositContractAddress)
         {
+            depositContractAddress = depositContractAddress.ToLower();
             var contract = await _table.GetDataAsync(DepositContractEntity.GenerateParitionKey(), depositContractAddress);
 
             return contract;
@@ -87,6 +88,7 @@ namespace AzureRepositories.Repositories
 
         public async Task<IDepositContract> GetByUserAsync(string userAddress)
         {
+            userAddress = userAddress.ToLower();
             var index = await _userContractIndex.GetDataAsync(_indexPartition,
                 userAddress);
 

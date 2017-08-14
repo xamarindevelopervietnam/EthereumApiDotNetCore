@@ -55,7 +55,7 @@ namespace EthereumJobs.Job
             _transferContractUserAssignmentQueueService = transferContractUserAssignmentQueueService;
         }
 
-        [TimerTrigger("0.00:06:00")]
+        [TimerTrigger("0.00:07:00")]
         public async Task Execute()
         {
             await _transferContractsRepository.ProcessAllAsync(async (item) =>

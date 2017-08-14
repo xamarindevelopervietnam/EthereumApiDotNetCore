@@ -32,34 +32,32 @@ namespace EthereumJobs.Config
         public static void RegisterJobs(IServiceCollection collection)
         {
             #region CoreJobs
-            //Uncomment
-            //collection.AddSingleton<MonitoringJob>();
-            //collection.AddSingleton<PingContractsJob>();
-            //Uncomment 2
+
+            collection.AddSingleton<MonitoringJob>();
+            collection.AddSingleton<PingContractsJob>();
             collection.AddSingleton<MonitoringCoinTransactionJob>();
-            //collection.AddSingleton<MonitoringOperationJob>();
-            //collection.AddSingleton<CashinIndexingJob>();
+            collection.AddSingleton<MonitoringOperationJob>();
+            collection.AddSingleton<CashinIndexingJob>();
 
             #endregion
 
             #region DepositJobs
 
-            //collection.AddSingleton<DepositContractPoolJob>();
-            //collection.AddSingleton<DepositContractUserAssignmentJob>();
-            //collection.AddSingleton<DepositPoolRenewJob>();
-            //collection.AddSingleton<MonitoringDepositContractsJob>();
-            //collection.AddSingleton<MonitoringDepositTransactionsJob>();
+            collection.AddSingleton<DepositContractPoolJob>();
+            collection.AddSingleton<DepositContractUserAssignmentJob>();
+            collection.AddSingleton<DepositPoolRenewJob>();
+            collection.AddSingleton<MonitoringDepositContractsJob>();
+            collection.AddSingleton<MonitoringDepositTransactionsJob>();
 
             #endregion
 
             #region TransaferJobs
 
-            //Uncomment
-            //collection.AddSingleton<MonitoringTransferContracts>();
-            //collection.AddSingleton<MonitoringTransferTransactions>();
-            //collection.AddSingleton<TransferContractUserAssignmentJob>();
-            //collection.AddSingleton<PoolRenewJob>();
-            //collection.AddSingleton<TransferTransactionQueueJob>();
+            collection.AddSingleton<MonitoringTransferContracts>();
+            collection.AddSingleton<MonitoringTransferTransactions>();
+            collection.AddSingleton<TransferContractUserAssignmentJob>();
+            collection.AddSingleton<PoolRenewJob>();
+            collection.AddSingleton<TransferTransactionQueueJob>();
 
             #endregion
 

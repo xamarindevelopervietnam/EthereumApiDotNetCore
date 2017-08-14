@@ -99,7 +99,9 @@ namespace EthereumJobs.Job
                 if (transactionHash != null && eventType != null)
                 {
                     await _pendingOperationService.MatchHashToOpId(transactionHash, operation.OperationId);
-                    await _coinEventService.PublishEvent(new CoinEvent(operation.OperationId.ToString(), transactionHash, operation.FromAddress, operation.ToAddress, resultAmount.ToString(), eventType.Value, operation.CoinAdapterAddress));
+                    await _coinEventService.PublishEvent(new CoinEvent(operation.OperationId.ToString(), transactionHash,
+                        operation.FromAddress, operation.ToAddress, 
+                        resultAmount.ToString(), eventType.Value, operation.CoinAdapterAddress));
                     await _eventTraceRepository.InsertAsync(new EventTrace()
                     {
                         Note = $"Operation Processed. Put it in the {Constants.TransactionMonitoringQueue}. With hash {transactionHash}",

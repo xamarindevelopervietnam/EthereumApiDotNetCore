@@ -30,7 +30,6 @@ namespace EthereumJobs.Job
         private readonly IDepositContractTransactionService _depositContractTransactionService;
         private readonly IEthereumTransactionService _ethereumTransactionService;
         private readonly AddressUtil _util;
-        private readonly ITransferContractUserAssignmentQueueService _transferContractUserAssignmentQueueService;
         private readonly IErc20ContractRepository _erc20ContractRepository;
         private readonly IErc20BalanceService _erc20BalanceService;
         private readonly ICoinRepository _coinRepository;

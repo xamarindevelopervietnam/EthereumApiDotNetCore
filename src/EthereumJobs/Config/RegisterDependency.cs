@@ -6,6 +6,7 @@ using EthereumJobs.Job;
 using Lykke.JobTriggers.Abstractions;
 using AzureRepositories.Notifiers;
 using Common.Log;
+using EthereumJobs.Job.DepositJobs;
 using RabbitMQ;
 
 namespace EthereumJobs.Config

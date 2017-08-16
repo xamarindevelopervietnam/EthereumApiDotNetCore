@@ -7,22 +7,24 @@ namespace EthereumSamuraiApiCaller.Models
     using Newtonsoft.Json;
     using System.Linq;
 
-    public partial class BalanceResponse
+    public partial class Erc20BalanceResponse
     {
         /// <summary>
-        /// Initializes a new instance of the BalanceResponse class.
+        /// Initializes a new instance of the Erc20BalanceResponse class.
         /// </summary>
-        public BalanceResponse()
+        public Erc20BalanceResponse()
         {
           CustomInit();
         }
 
         /// <summary>
-        /// Initializes a new instance of the BalanceResponse class.
+        /// Initializes a new instance of the Erc20BalanceResponse class.
         /// </summary>
-        public BalanceResponse(string amount = default(string))
+        public Erc20BalanceResponse(string address = default(string), string amount = default(string), string contract = default(string))
         {
+            Address = address;
             Amount = amount;
+            Contract = contract;
             CustomInit();
         }
 
@@ -33,8 +35,18 @@ namespace EthereumSamuraiApiCaller.Models
 
         /// <summary>
         /// </summary>
+        [JsonProperty(PropertyName = "address")]
+        public string Address { get; set; }
+
+        /// <summary>
+        /// </summary>
         [JsonProperty(PropertyName = "amount")]
         public string Amount { get; set; }
+
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "contract")]
+        public string Contract { get; set; }
 
     }
 }

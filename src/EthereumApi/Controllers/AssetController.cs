@@ -1,19 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
-using Core.Exceptions;
-using EthereumApi.Models;
-using Microsoft.AspNetCore.Mvc;
-using Services;
-using Services.Coins;
 using Common.Log;
-using EthereumApiSelfHosted.Models;
 using Core.Repositories;
-using System.Numerics;
+using EthereumApi.Models;
+using EthereumApiSelfHosted.Models;
+using Microsoft.AspNetCore.Mvc;
 using Nethereum.Util;
+using Services;
 
 namespace EthereumApi.Controllers
 {
@@ -22,49 +16,72 @@ namespace EthereumApi.Controllers
     [Produces("application/json")]
     public class СoinAdapterController : Controller
     {
+        private readonly AddressUtil          _addressUtil;
         private readonly AssetContractService _assetContractService;
-        private readonly ILog _logger;
-        private readonly AddressUtil _addressUtil;
+        private readonly ILog                 _logger;
 
-        public СoinAdapterController(AssetContractService assetContractService, ILog logger)
+        public СoinAdapterController(
+            AssetContractService assetContractService,
+            ILog logger)
         {
-            _addressUtil = new AddressUtil();
+            _addressUtil          = new AddressUtil();
             _assetContractService = assetContractService;
-            _logger = logger;
+            _logger               = logger;
         }
 
+        [Route("create")]
+        [HttpPost]
+        [ProducesResponseType(typeof(RegisterResponse), 200)]
+        public async Task<IActionResult> CreateCoinAdapter([FromBody] CreateAssetModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+                
+
+            var asset = new Coin
+            {
+                ExternalTokenAddress     = model.ExternalTokenAddress,
+                ContainsEth              = model.ContainsEth,
+                Blockchain               = model.Blockchain,
+                BlockchainDepositEnabled = true,
+                Id                       = Guid.NewGuid().ToString(),
+                Multiplier               = model.Multiplier,
+                Name                     = model.Name
+            };
+
+            var contractAddress = await _assetContractService.CreateCoinContract(asset);
+
+            return Ok(new RegisterResponse
+            {
+                Contract = contractAddress
+            });
+        }
+
+        [Route("balance/{coinAdapterAddress}/{userAddress}")]
         [HttpGet]
-        [ProducesResponseType(typeof(ListResult<CoinResult>), 200)]
-        public async Task<IActionResult> GetAllAdapters()
+        [ProducesResponseType(typeof(BalanceModel), 200)]
+        [ProducesResponseType(typeof(ApiException), 400)]
+        [ProducesResponseType(typeof(ApiException), 500)]
+        public async Task<IActionResult> CreateCoinAdapter(
+            [FromRoute] string coinAdapterAddress,
+            [FromRoute] string userAddress)
         {
-            IEnumerable<ICoin> all = await _assetContractService.GetAll();
-            IEnumerable<CoinResult> result = all.Select(x => new CoinResult()
+            if (!ModelState.IsValid)
             {
-                AdapterAddress = x.AdapterAddress,
-                Blockchain = x.Blockchain,
-                BlockchainDepositEnabled = x.BlockchainDepositEnabled,
-                ContainsEth = x.ContainsEth,
-                ExternalTokenAddress = x.ExternalTokenAddress,
-                Id = x.Id,
-                Multiplier = x.Multiplier,
-                Name = x.Name
-            });
+                return BadRequest(ModelState);
+            }
+            
+            var amount = await _assetContractService.GetBalance
+            (
+                coinAdapterAddress,
+                _addressUtil.ConvertToChecksumAddress(userAddress)
+            );
 
-            return Ok(new ListResult<CoinResult>()
+            return Ok(new BalanceModel
             {
-                Data = result
-            });
-        }
-
-        //method was created for integration convinience
-        [HttpGet("exists/{adapterAddress}")]
-        [ProducesResponseType(typeof(ExistsModel), 200)]
-        public async Task<IActionResult> IsValidAddress(string adapterAddress)
-        {
-            var coin = await _assetContractService.GetByAddress(adapterAddress);
-            return Ok(new ExistsModel()
-            {
-                Exists = coin != null
+                Amount = amount.ToString()
             });
         }
 
@@ -84,52 +101,39 @@ namespace EthereumApi.Controllers
             return await GetCoinAdapter(adapterAddress, _assetContractService.GetByAddress);
         }
 
-        [Route("create")]
-        [HttpPost]
-        [ProducesResponseType(typeof(RegisterResponse), 200)]
-        public async Task<IActionResult> CreateCoinAdapter([FromBody]CreateAssetModel model)
+        [HttpGet]
+        [ProducesResponseType(typeof(ListResult<CoinResult>), 200)]
+        public async Task<IActionResult> GetAllAdapters()
         {
-            if (!ModelState.IsValid)
+            var allAdapters = await _assetContractService.GetAll();
+            var result      = allAdapters.Select(x => new CoinResult
             {
-                return BadRequest(ModelState);
-            }
+                AdapterAddress           = x.AdapterAddress,
+                Blockchain               = x.Blockchain,
+                BlockchainDepositEnabled = x.BlockchainDepositEnabled,
+                ContainsEth              = x.ContainsEth,
+                ExternalTokenAddress     = x.ExternalTokenAddress,
+                Id                       = x.Id,
+                Multiplier               = x.Multiplier,
+                Name                     = x.Name
+            });
 
-            ICoin asset = new Coin()
+            return Ok(new ListResult<CoinResult>
             {
-                ExternalTokenAddress = model.ExternalTokenAddress,
-                ContainsEth = model.ContainsEth,
-                Blockchain = model.Blockchain,
-                BlockchainDepositEnabled = true,
-                Id = Guid.NewGuid().ToString(),
-                Multiplier = model.Multiplier,
-                Name = model.Name,
-            };
-
-            string contractAddress = await _assetContractService.CreateCoinContract(asset);
-
-            return Ok(new RegisterResponse
-            {
-                Contract = contractAddress
+                Data = result
             });
         }
 
-        [Route("balance/{coinAdapterAddress}/{userAddress}")]
-        [HttpGet]
-        [ProducesResponseType(typeof(BalanceModel), 200)]
-        [ProducesResponseType(typeof(ApiException), 400)]
-        [ProducesResponseType(typeof(ApiException), 500)]
-        public async Task<IActionResult> CreateCoinAdapter([FromRoute]string coinAdapterAddress, [FromRoute]string userAddress)
+        //method was created for integration convinience
+        [HttpGet("exists/{adapterAddress}")]
+        [ProducesResponseType(typeof(ExistsModel), 200)]
+        public async Task<IActionResult> IsValidAddress(string adapterAddress)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            var coin = await _assetContractService.GetByAddress(adapterAddress);
 
-            BigInteger amount = await _assetContractService.GetBalance(coinAdapterAddress, _addressUtil.ConvertToChecksumAddress(userAddress));
-
-            return Ok(new BalanceModel
+            return Ok(new ExistsModel
             {
-                Amount = amount.ToString()
+                Exists = coin != null
             });
         }
 
@@ -139,24 +143,24 @@ namespace EthereumApi.Controllers
             {
                 return BadRequest("identifier is missing");
             }
-
-            ICoin coinAdapter = await recieveFunc(argument);//(id);
+            
+            var coinAdapter = await recieveFunc(argument); //(id);
 
             if (coinAdapter == null)
             {
                 return NotFound();
             }
-
-            var result = new CoinResult()
+            
+            var result = new CoinResult
             {
-                AdapterAddress = coinAdapter.AdapterAddress,
-                Blockchain = coinAdapter.Blockchain,
+                AdapterAddress           = coinAdapter.AdapterAddress,
+                Blockchain               = coinAdapter.Blockchain,
                 BlockchainDepositEnabled = coinAdapter.BlockchainDepositEnabled,
-                ContainsEth = coinAdapter.ContainsEth,
-                ExternalTokenAddress = coinAdapter.ExternalTokenAddress,
-                Id = coinAdapter.Id,
-                Multiplier = coinAdapter.Multiplier,
-                Name = coinAdapter.Name
+                ContainsEth              = coinAdapter.ContainsEth,
+                ExternalTokenAddress     = coinAdapter.ExternalTokenAddress,
+                Id                       = coinAdapter.Id,
+                Multiplier               = coinAdapter.Multiplier,
+                Name                     = coinAdapter.Name
             };
 
             return Ok(result);

@@ -21,14 +21,11 @@ namespace EthereumJobs.Job.DepositJobs
         private readonly IDepositContractTransactionService _depositContractTransactionService;
         private readonly IErc20BalanceService               _erc20BalanceService;
         private readonly IErc20ContractRepository           _erc20ContractRepository;
-        private readonly IErcInterfaceService               _ercInterfaceService;
         private readonly IEthereumTransactionService        _ethereumTransactionService;
         private readonly ILog                               _logger;
         private readonly IPaymentService                    _paymentService;
         private readonly IBaseSettings                      _settings;
         private readonly IUserDepositWalletRepository       _userDepositWalletRepository;
-        private readonly IUserPaymentRepository             _userPaymentRepository;
-        private readonly AddressUtil                        _util;
 
 
 
@@ -39,22 +36,17 @@ namespace EthereumJobs.Job.DepositJobs
             IDepositContractTransactionService depositContractTransactionService,
             IErc20BalanceService erc20BalanceService,
             IErc20ContractRepository erc20ContractRepository,
-            IErcInterfaceService ercInterfaceService,
             IEthereumTransactionService ethereumTransactionService,
             ILog logger,
             IPaymentService paymentService,
             IBaseSettings settings,
-            IUserDepositWalletRepository userDepositWalletRepository,
-            IUserPaymentRepository userPaymentRepository)
+            IUserDepositWalletRepository userDepositWalletRepository)
         {
-            _util                              = new AddressUtil();
             _ethereumTransactionService        = ethereumTransactionService;
-            _ercInterfaceService               = ercInterfaceService;
             _settings                          = settings;
             _depositContractRepository         = depositContractRepository;
             _logger                            = logger;
             _paymentService                    = paymentService;
-            _userPaymentRepository             = userPaymentRepository;
             _depositContractService            = depositContractService;
             _userDepositWalletRepository       = userDepositWalletRepository;
             _depositContractTransactionService = depositContractTransactionService;
@@ -83,7 +75,7 @@ namespace EthereumJobs.Job.DepositJobs
         {
             var wallet = await GetUserDepositWallet(depositContract, adapterAddress);
 
-            if (wallet == null || string.IsNullOrEmpty(wallet.LastBalance) || wallet.LastBalance == "0")
+            if (string.IsNullOrEmpty(wallet?.LastBalance) || wallet.LastBalance == "0")
             {
                 await _userDepositWalletRepository.ReplaceAsync
                 (
@@ -111,9 +103,9 @@ namespace EthereumJobs.Job.DepositJobs
 
                 await LogInfo
                 (
-                    $"Balance on deposit contract address - {depositContract.ContractAddress}" +
-                    $" for adapter contract {adapterAddress} is {balance}" +
-                    $" transfer belongs to user {depositContract.UserAddress}"
+                    $"Balance on deposit contract address - {depositContract.ContractAddress} " +
+                    $"for adapter contract {adapterAddress} is {balance} " +
+                    $"transfer belongs to user {depositContract.UserAddress}"
                 );
             }
         }
@@ -129,54 +121,54 @@ namespace EthereumJobs.Job.DepositJobs
                 .Where(x => !string.IsNullOrEmpty(x.ExternalTokenAddress))
                 .ToDictionary(x => x.ExternalTokenAddress);
 
-            await _depositContractRepository.ProcessAllAsync(async item =>
+            await _depositContractRepository.ProcessAllAsync(async depositContract =>
             {
                 try
                 {
                     //Check that transfer contract assigned to user
-                    if (!string.IsNullOrEmpty(item.UserAddress))
+                    if (!string.IsNullOrEmpty(depositContract.UserAddress))
                     {
                         // Check, if assignment completed
-                        var userAddress              = await _depositContractService.GetUserAddressForDepositContract(item.ContractAddress);
+                        var userAddress              = await _depositContractService.GetUserAddressForDepositContract(depositContract.ContractAddress);
                         var userAddressIsNullOrEmpty = string.IsNullOrEmpty(userAddress) || userAddress == Constants.EmptyEthereumAddress;
 
-                        if (userAddressIsNullOrEmpty && !await CheckIfAssignmentCompleted(item))
+                        if (!userAddressIsNullOrEmpty || await CheckIfAssignmentCompleted(depositContract))
                         {
-                            var errorMessage = $"User assignment was not completed for {item.UserAddress} (contractAddress::{item.ContractAddress}, trHash: {item.AssignmentHash})";
-                            
-                            // TODO: Ensure, that we should both log warning and throw exception
-
-                            await LogWarning(errorMessage);
-
-                            throw new Exception(errorMessage);
-                        }
-                        
-                        // Check erc20 tokens balances
-                        var tokenBalances = await _erc20BalanceService.GetBalancesForAddress(item.ContractAddress, supportedTokens);
-                        if (tokenBalances != null)
-                        {
-                            foreach (var tokenBalance in tokenBalances.Where(x => x.Balance > 0))
+                            // Check erc20 tokens balances
+                            var tokenBalances = await _erc20BalanceService.GetBalancesForAddress(depositContract.ContractAddress, supportedTokens);
+                            if (tokenBalances != null)
                             {
-                                tokenAdapters.TryGetValue(tokenBalance.Erc20TokenAddress, out ICoin coinAdapter);
+                                foreach (var tokenBalance in tokenBalances.Where(x => x.Balance > 0))
+                                {
+                                    tokenAdapters.TryGetValue(tokenBalance.Erc20TokenAddress, out ICoin tokenAdapter);
 
-                                if (coinAdapter != null)
-                                {
-                                    await CheckBalance(item, coinAdapter.AdapterAddress, tokenBalance.Balance);
-                                }
-                                else
-                                {
-                                    await LogInfo($"There is no adapter for erc20 token {tokenBalance.Erc20TokenAddress}");
+                                    if (tokenAdapter != null)
+                                    {
+                                        await CheckBalance(depositContract, tokenAdapter.AdapterAddress, tokenBalance.Balance);
+                                    }
+                                    else
+                                    {
+                                        await LogInfo($"There is no adapter for erc20 token {tokenBalance.Erc20TokenAddress}");
+                                    }
                                 }
                             }
+
+                            // Check ethereum balance
+                            await CheckBalance
+                            (
+                                depositContract,
+                                _settings.EthereumAdapterAddress,
+                                await _paymentService.GetAddressBalanceInWei(depositContract.ContractAddress)
+                            );
                         }
-                        
-                        // Check ethereum balance
-                        await CheckBalance
-                        (
-                            depositContract: item,
-                            adapterAddress:  _settings.EthereumAdapterAddress,
-                            balance:         await _paymentService.GetAddressBalanceInWei(item.ContractAddress)
-                        );
+                        else
+                        {
+                            var errorMessage = $"User assignment was not completed for {depositContract.UserAddress} (contractAddress::{depositContract.ContractAddress}, trHash: {depositContract.AssignmentHash})";
+
+                            // TODO: Ensure, that we should both log warning and error
+                            await LogWarning(errorMessage);
+                            await LogError(new Exception(errorMessage));
+                        }
                     }
                 }
                 catch (Exception e)

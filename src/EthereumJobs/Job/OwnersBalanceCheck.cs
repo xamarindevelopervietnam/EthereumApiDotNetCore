@@ -1,55 +1,51 @@
-﻿using System.Threading.Tasks;
-using Core.Repositories;
-using Nethereum.Web3;
-using Services;
+﻿using System;
+using System.Threading.Tasks;
 using Common.Log;
-using Core.Settings;
-using System.Numerics;
-using System;
-using System.Collections.Generic;
-using Common;
-using Lykke.JobTriggers.Triggers.Attributes;
-using Services.New;
 using Core.Notifiers;
-using System.Linq;
+using Core.Settings;
+using Lykke.JobTriggers.Triggers.Attributes;
+using Services;
+using Services.New;
 
 namespace EthereumJobs.Job
 {
     public class OwnersBalanceCheck
     {
-        private readonly ILog _logger;
-        private readonly ICoinRepository _coinRepository;
-        private readonly TransferContractPoolService _transferContractPoolService;
-        private readonly IOwnerService _ownerService;
-        private readonly IPaymentService _paymentService;
-        private readonly IBaseSettings _settings;
-        private DateTime _lastWarningSentTime;
-        private readonly ISlackNotifier _slackNotifier;
+        private readonly ILog                        _logger;
+        private readonly IOwnerService               _ownerService;
+        private readonly IPaymentService             _paymentService;
+        private readonly IBaseSettings               _settings;
+        private readonly ISlackNotifier              _slackNotifier;
 
-        public OwnersBalanceCheck(IBaseSettings settings,
+        private DateTime _lastWarningSentTime;
+
+
+
+        public OwnersBalanceCheck(
+            IBaseSettings settings,
             ILog logger,
             IOwnerService ownerService,
             IPaymentService paymentService,
-            ISlackNotifier slackNotifier
-            )
+            ISlackNotifier slackNotifier)
         {
-            _slackNotifier = slackNotifier;
-            _settings = settings;
+            _logger         = logger;
+            _ownerService   = ownerService;
             _paymentService = paymentService;
-            _ownerService = ownerService;
-            _logger = logger;
+            _settings       = settings;
+            _slackNotifier  = slackNotifier;
         }
+
+
 
         [TimerTrigger("0.00:05:00")]
         public async Task Execute()
         {
-            List<IOwner> allOwners = (await _ownerService.GetAll()).ToList();
-            allOwners.Add(new Owner() { Address = _settings.EthereumMainAccount });
-
-            foreach (var owner in allOwners)
+            foreach (var owner in await _ownerService.GetAll())
             {
                 await InternalBalanceCheck(owner.Address);
             }
+
+            await InternalBalanceCheck(_settings.EthereumMainAccount);
         }
 
         private async Task InternalBalanceCheck(string address)
@@ -57,22 +53,33 @@ namespace EthereumJobs.Job
             try
             {
                 var balance = await _paymentService.GetUserContractBalance(address);
-                if (balance < _settings.MainAccountMinBalance)
+                if (balance < _settings.MainAccountMinBalance && (DateTime.UtcNow - _lastWarningSentTime).TotalHours > 1)
                 {
-                    if ((DateTime.UtcNow - _lastWarningSentTime).TotalHours > 1)
-                    {
-                        string message = $"Main account {address} balance is less that {_settings.MainAccountMinBalance} ETH !";
+                    var message = $"Main account {address} balance is less that {_settings.MainAccountMinBalance} ETH !";
 
-                        await _logger.WriteWarningAsync("OwnersBalanceCheck", "InternalBalanceCheck", "", message);
-                        await _slackNotifier.FinanceWarningAsync(message);
+                    await _logger.WriteWarningAsync
+                    (
+                        "OwnersBalanceCheck",
+                        "InternalBalanceCheck",
+                        "",
+                        message
+                    );
 
-                        _lastWarningSentTime = DateTime.UtcNow;
-                    }
+                    await _slackNotifier.FinanceWarningAsync(message);
+
+                    _lastWarningSentTime = DateTime.UtcNow;
                 }
+                    
             }
             catch (Exception e)
             {
-                await _logger.WriteErrorAsync("OwnersBalanceCheck", "InternalBalanceCheck", "", e);
+                await _logger.WriteErrorAsync
+                (
+                    "OwnersBalanceCheck",
+                    "InternalBalanceCheck",
+                    "",
+                    e
+                );
             }
         }
     }

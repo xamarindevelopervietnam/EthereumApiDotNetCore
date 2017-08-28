@@ -89,12 +89,12 @@ namespace ContractBuilder
             //    Key = "",
             //});
 
-            //var service = ServiceProvider.GetService<IErcInterfaceService>();
-            //service.Transfer("0xce2ef46ecc168226f33b6f6b8a56e90450d0d2c0", settings.EthereumCore.EthereumMainAccount,
-            //    "0xf87bbc410e051f32de3fcb0791a5e22c59eaf4d1", new System.Numerics.BigInteger(101)).Wait();
-            //var paymentService = ServiceProvider.GetService<IPaymentService>();
-            //    string result = paymentService.SendEthereum(settings.EthereumMainAccount, 
-            //    "0xbb0a9c08030898cdaf1f28633f0d3c8556155482", new System.Numerics.BigInteger(5000000000000000)).Result;
+            var service = ServiceProvider.GetService<IErcInterfaceService>();
+            service.Transfer("0xce2ef46ecc168226f33b6f6b8a56e90450d0d2c0", settings.EthereumCore.EthereumMainAccount,
+                "0xf87bbc410e051f32de3fcb0791a5e22c59eaf4d1", new System.Numerics.BigInteger(101)).Wait();
+            var paymentService = ServiceProvider.GetService<IPaymentService>();
+                string result = paymentService.SendEthereum(settings.EthereumCore.EthereumMainAccount,
+                "0xf87bbc410e051f32de3fcb0791a5e22c59eaf4d1", new System.Numerics.BigInteger(5000000000000000)).Result;
             //var coinEv = ServiceProvider.GetService<ICoinEventService>();
             //var ev1 = coinEv.GetCoinEvent("0xbfb8d6a561c1a088c347efb989e19cb02c1028b34a337e001b146fd1360dc714").Result;
             //var ev2 = coinEv.GetCoinEvent("0xa0876a676d695ab145fcf70ac0b2ae02e8b00351a5193352ffb37ad37dce6848").Result;

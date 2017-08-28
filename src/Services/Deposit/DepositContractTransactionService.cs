@@ -95,7 +95,7 @@ namespace Services
 
                 var opId = $"InternalOperation-{Guid.NewGuid().ToString()}";
                 var transactionHash = await _depositContractService.RecievePaymentFromTransferContract(depositContractAddress,
-                    coinAdapterAddress, balance);
+                    coinAdapterAddress);
                 await _coinEventService.PublishEvent(new CoinEvent(opId, 
                     transactionHash, contractTransferTr.DepositContractAddress, contractTransferTr.UserAddress,
                     balance.ToString(), CoinEventType.CashinStarted, coinAdapterAddress));

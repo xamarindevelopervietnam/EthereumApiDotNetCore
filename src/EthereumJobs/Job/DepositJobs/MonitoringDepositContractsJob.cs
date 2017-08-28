@@ -15,19 +15,17 @@ namespace EthereumJobs.Job.DepositJobs
 {
     public class MonitoringDepositContractsJob
     {
-        private readonly ICoinRepository                    _coinRepository;
-        private readonly IDepositContractRepository         _depositContractRepository;
-        private readonly IDepositContractService            _depositContractService;
+        private readonly ICoinRepository _coinRepository;
+        private readonly IDepositContractRepository _depositContractRepository;
+        private readonly IDepositContractService _depositContractService;
         private readonly IDepositContractTransactionService _depositContractTransactionService;
-        private readonly IErc20BalanceService               _erc20BalanceService;
-        private readonly IErc20ContractRepository           _erc20ContractRepository;
-        private readonly IEthereumTransactionService        _ethereumTransactionService;
-        private readonly ILog                               _logger;
-        private readonly IPaymentService                    _paymentService;
-        private readonly IBaseSettings                      _settings;
-        private readonly IUserDepositWalletRepository       _userDepositWalletRepository;
-
-
+        private readonly IErc20BalanceService _erc20BalanceService;
+        private readonly IErc20ContractRepository _erc20ContractRepository;
+        private readonly IEthereumTransactionService _ethereumTransactionService;
+        private readonly ILog _logger;
+        private readonly IPaymentService _paymentService;
+        private readonly IBaseSettings _settings;
+        private readonly IUserDepositWalletRepository _userDepositWalletRepository;
 
         public MonitoringDepositContractsJob(
             ICoinRepository coinRepository,
@@ -42,72 +40,17 @@ namespace EthereumJobs.Job.DepositJobs
             IBaseSettings settings,
             IUserDepositWalletRepository userDepositWalletRepository)
         {
-            _ethereumTransactionService        = ethereumTransactionService;
-            _settings                          = settings;
-            _depositContractRepository         = depositContractRepository;
-            _logger                            = logger;
-            _paymentService                    = paymentService;
-            _depositContractService            = depositContractService;
-            _userDepositWalletRepository       = userDepositWalletRepository;
+            _ethereumTransactionService = ethereumTransactionService;
+            _settings = settings;
+            _depositContractRepository = depositContractRepository;
+            _logger = logger;
+            _paymentService = paymentService;
+            _depositContractService = depositContractService;
+            _userDepositWalletRepository = userDepositWalletRepository;
             _depositContractTransactionService = depositContractTransactionService;
-            _erc20ContractRepository           = erc20ContractRepository;
-            _erc20BalanceService               = erc20BalanceService;
-            _coinRepository                    = coinRepository;
-        }
-
-        private async Task<bool> CheckIfAssignmentCompleted(IDepositContract depositContract)
-        {
-            var assignmentCompleted = false;
-
-            if (!string.IsNullOrEmpty(depositContract.AssignmentHash))
-            {
-                assignmentCompleted = await _ethereumTransactionService.IsTransactionExecuted
-                (
-                    depositContract.AssignmentHash,
-                    Constants.GasForCoinTransaction
-                );
-            }
-
-            return assignmentCompleted;
-        }
-
-        private async Task CheckBalance(IDepositContract depositContract, string adapterAddress, BigInteger balance)
-        {
-            var wallet = await GetUserDepositWallet(depositContract, adapterAddress);
-
-            if (string.IsNullOrEmpty(wallet?.LastBalance) || wallet.LastBalance == "0")
-            {
-                await _userDepositWalletRepository.ReplaceAsync
-                (
-                    new UserDepositWallet
-                    {
-                        LastBalance            = balance.ToString(),
-                        CoinAdapterAddress     = adapterAddress,
-                        DepositContractAddress = depositContract.ContractAddress,
-                        UserAddress            = depositContract.UserAddress,
-                        UpdateDate             = DateTime.UtcNow
-                    }
-                );
-
-                await _depositContractTransactionService.PutContractTransferTransaction
-                (
-                    new DepositContractTransaction
-                    {
-                        Amount                 = balance.ToString(), //-V3086
-                        UserAddress            = depositContract.UserAddress,
-                        DepositContractAddress = depositContract.ContractAddress,
-                        CoinAdapterAddress     = adapterAddress,
-                        CreateDt               = DateTime.UtcNow
-                    }
-                );
-
-                await LogInfo
-                (
-                    $"Balance on deposit contract address - {depositContract.ContractAddress} " +
-                    $"for adapter contract {adapterAddress} is {balance} " +
-                    $"transfer belongs to user {depositContract.UserAddress}"
-                );
-            }
+            _erc20ContractRepository = erc20ContractRepository;
+            _erc20BalanceService = erc20BalanceService;
+            _coinRepository = coinRepository;
         }
 
         [TimerTrigger("0.00:03:00")]
@@ -116,7 +59,7 @@ namespace EthereumJobs.Job.DepositJobs
             var supportedTokens = (await _erc20ContractRepository.GetAllAsync())
                 .Select(x => x.TokenAddress)
                 .ToList();
-            
+
             var tokenAdapters = (await _coinRepository.GetAll())
                 .Where(x => !string.IsNullOrEmpty(x.ExternalTokenAddress))
                 .ToDictionary(x => x.ExternalTokenAddress);
@@ -125,11 +68,12 @@ namespace EthereumJobs.Job.DepositJobs
             {
                 try
                 {
+                    string depositContractAddress = depositContract.ContractAddress;
                     //Check that transfer contract assigned to user
                     if (!string.IsNullOrEmpty(depositContract.UserAddress))
                     {
                         // Check, if assignment completed
-                        var userAddress              = await _depositContractService.GetUserAddressForDepositContract(depositContract.ContractAddress);
+                        var userAddress = await _depositContractService.GetUserAddressForDepositContract(depositContractAddress);
                         var userAddressIsNullOrEmpty = string.IsNullOrEmpty(userAddress) || userAddress == Constants.EmptyEthereumAddress;
 
                         if (!userAddressIsNullOrEmpty || await CheckIfAssignmentCompleted(depositContract))
@@ -152,21 +96,32 @@ namespace EthereumJobs.Job.DepositJobs
                                     }
                                 }
                             }
-
-                            // Check ethereum balance
-                            await CheckBalance
-                            (
-                                depositContract,
-                                _settings.EthereumAdapterAddress,
-                                await _paymentService.GetAddressBalanceInWei(depositContract.ContractAddress)
-                            );
                         }
                         else
                         {
                             var errorMessage = $"User assignment was not completed for {depositContract.UserAddress} (contractAddress::{depositContract.ContractAddress}, trHash: {depositContract.AssignmentHash})";
 
-                            // TODO: Ensure, that we should both log warning and error
-                            await LogWarning(errorMessage);
+                            await LogError(new Exception(errorMessage));
+                        }
+
+                        //Error here
+                        var userAddressForLegacyAdapter = await _depositContractService.GetUserAddressForLegacyAdapterAsync(depositContractAddress);
+                        var userAddressForLegacyAdapterIsNullOrEmpty = string.IsNullOrEmpty(userAddressForLegacyAdapter)
+                        || userAddressForLegacyAdapter == Constants.EmptyEthereumAddress;
+                        if (!string.IsNullOrEmpty(userAddressForLegacyAdapter) || userAddress != Constants.EmptyEthereumAddress)
+                        {
+                            // Check ethereum balance
+                            await CheckBalance
+                           (
+                               depositContract,
+                               _settings.EthereumAdapterAddress,
+                               await _paymentService.GetAddressBalanceInWei(depositContract.ContractAddress)
+                           );
+                        }
+                        else
+                        {
+                            var errorMessage = $"(Legacy ETH adapter)User assignment was not completed for {depositContract.UserAddress} (contractAddress::{depositContract.ContractAddress}, trHash: {depositContract.LegacyEthAdapterAssignmentHash})";
+
                             await LogError(new Exception(errorMessage));
                         }
                     }
@@ -176,6 +131,67 @@ namespace EthereumJobs.Job.DepositJobs
                     await LogError(e);
                 }
             });
+        }
+
+        private async Task<bool> CheckIfAssignmentCompleted(IDepositContract depositContract)
+        {
+            return await CheckIfAssignmentCompleted(depositContract.AssignmentHash);
+        }
+
+        private async Task<bool> CheckIfAssignmentCompleted(string assignmentTrHash)
+        {
+            var assignmentCompleted = false;
+
+            if (!string.IsNullOrEmpty(assignmentTrHash))
+            {
+                assignmentCompleted = await _ethereumTransactionService.IsTransactionExecuted
+                (
+                    assignmentTrHash,
+                    Constants.GasForCoinTransaction
+                );
+            }
+
+            return assignmentCompleted;
+        }
+
+
+        private async Task CheckBalance(IDepositContract depositContract, string adapterAddress, BigInteger balance)
+        {
+            var wallet = await GetUserDepositWallet(depositContract, adapterAddress);
+
+            if (string.IsNullOrEmpty(wallet?.LastBalance) || wallet.LastBalance == "0")
+            {
+                await _userDepositWalletRepository.ReplaceAsync
+                (
+                    new UserDepositWallet
+                    {
+                        LastBalance = balance.ToString(),
+                        CoinAdapterAddress = adapterAddress,
+                        DepositContractAddress = depositContract.ContractAddress,
+                        UserAddress = depositContract.UserAddress,
+                        UpdateDate = DateTime.UtcNow
+                    }
+                );
+
+                await _depositContractTransactionService.PutContractTransferTransaction
+                (
+                    new DepositContractTransaction
+                    {
+                        Amount = balance.ToString(), //-V3086
+                        UserAddress = depositContract.UserAddress,
+                        DepositContractAddress = depositContract.ContractAddress,
+                        CoinAdapterAddress = adapterAddress,
+                        CreateDt = DateTime.UtcNow
+                    }
+                );
+
+                await LogInfo
+                (
+                    $"Balance on deposit contract address - {depositContract.ContractAddress} " +
+                    $"for adapter contract {adapterAddress} is {balance} " +
+                    $"transfer belongs to user {depositContract.UserAddress}"
+                );
+            }
         }
 
         private async Task<IUserDepositWallet> GetUserDepositWallet(IDepositContract depositContract, string adapterAddress)

@@ -147,9 +147,9 @@ namespace EthereumSamuraiApiCaller
         /// </param>
         /// <param name='stopBlock'>
         /// </param>
-        /// <param name='start'>
-        /// </param>
         /// <param name='count'>
+        /// </param>
+        /// <param name='start'>
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -172,7 +172,7 @@ namespace EthereumSamuraiApiCaller
         /// <return>
         /// A response object containing the response body and response headers.
         /// </return>
-        public async Task<HttpOperationResponse<object>> ApiAddressHistoryByAddressGetWithHttpMessagesAsync(string address, long? startBlock = default(long?), long? stopBlock = default(long?), int? start = default(int?), int? count = default(int?), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<HttpOperationResponse<object>> ApiAddressHistoryByAddressGetWithHttpMessagesAsync(string address, long? startBlock = default(long?), long? stopBlock = default(long?), int? count = default(int?), int? start = default(int?), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (address == null)
             {
@@ -188,15 +188,15 @@ namespace EthereumSamuraiApiCaller
                 tracingParameters.Add("address", address);
                 tracingParameters.Add("startBlock", startBlock);
                 tracingParameters.Add("stopBlock", stopBlock);
-                tracingParameters.Add("start", start);
                 tracingParameters.Add("count", count);
+                tracingParameters.Add("start", start);
                 tracingParameters.Add("cancellationToken", cancellationToken);
                 ServiceClientTracing.Enter(_invocationId, this, "ApiAddressHistoryByAddressGet", tracingParameters);
             }
             // Construct URL
             var _baseUrl = BaseUri.AbsoluteUri;
             var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/AddressHistory/{address}").ToString();
-            _url = _url.Replace("{address}", System.Uri.EscapeDataString(address));
+            _url = _url.Replace("{Address}", System.Uri.EscapeDataString(address));
             List<string> _queryParameters = new List<string>();
             if (startBlock != null)
             {
@@ -205,6 +205,10 @@ namespace EthereumSamuraiApiCaller
             if (stopBlock != null)
             {
                 _queryParameters.Add(string.Format("stopBlock={0}", System.Uri.EscapeDataString(SafeJsonConvert.SerializeObject(stopBlock, SerializationSettings).Trim('"'))));
+            }
+            if (count != null)
+            {
+                _queryParameters.Add(string.Format("Count={0}", System.Uri.EscapeDataString(SafeJsonConvert.SerializeObject(count, SerializationSettings).Trim('"'))));
             }
             if (start != null)
             {
@@ -1565,9 +1569,9 @@ namespace EthereumSamuraiApiCaller
         /// </param>
         /// <param name='stopBlock'>
         /// </param>
-        /// <param name='start'>
-        /// </param>
         /// <param name='count'>
+        /// </param>
+        /// <param name='start'>
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -1590,7 +1594,7 @@ namespace EthereumSamuraiApiCaller
         /// <return>
         /// A response object containing the response body and response headers.
         /// </return>
-        public async Task<HttpOperationResponse<object>> ApiInternalMessagesByAddressGetWithHttpMessagesAsync(string address, long? startBlock = default(long?), long? stopBlock = default(long?), int? start = default(int?), int? count = default(int?), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<HttpOperationResponse<object>> ApiInternalMessagesByAddressGetWithHttpMessagesAsync(string address, long? startBlock = default(long?), long? stopBlock = default(long?), int? count = default(int?), int? start = default(int?), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (address == null)
             {
@@ -1606,15 +1610,15 @@ namespace EthereumSamuraiApiCaller
                 tracingParameters.Add("address", address);
                 tracingParameters.Add("startBlock", startBlock);
                 tracingParameters.Add("stopBlock", stopBlock);
-                tracingParameters.Add("start", start);
                 tracingParameters.Add("count", count);
+                tracingParameters.Add("start", start);
                 tracingParameters.Add("cancellationToken", cancellationToken);
                 ServiceClientTracing.Enter(_invocationId, this, "ApiInternalMessagesByAddressGet", tracingParameters);
             }
             // Construct URL
             var _baseUrl = BaseUri.AbsoluteUri;
             var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/InternalMessages/{address}").ToString();
-            _url = _url.Replace("{address}", System.Uri.EscapeDataString(address));
+            _url = _url.Replace("{Address}", System.Uri.EscapeDataString(address));
             List<string> _queryParameters = new List<string>();
             if (startBlock != null)
             {
@@ -1624,13 +1628,13 @@ namespace EthereumSamuraiApiCaller
             {
                 _queryParameters.Add(string.Format("StopBlock={0}", System.Uri.EscapeDataString(SafeJsonConvert.SerializeObject(stopBlock, SerializationSettings).Trim('"'))));
             }
-            if (start != null)
-            {
-                _queryParameters.Add(string.Format("Start={0}", System.Uri.EscapeDataString(SafeJsonConvert.SerializeObject(start, SerializationSettings).Trim('"'))));
-            }
             if (count != null)
             {
                 _queryParameters.Add(string.Format("Count={0}", System.Uri.EscapeDataString(SafeJsonConvert.SerializeObject(count, SerializationSettings).Trim('"'))));
+            }
+            if (start != null)
+            {
+                _queryParameters.Add(string.Format("Start={0}", System.Uri.EscapeDataString(SafeJsonConvert.SerializeObject(start, SerializationSettings).Trim('"'))));
             }
             if (_queryParameters.Count > 0)
             {
@@ -2024,9 +2028,9 @@ namespace EthereumSamuraiApiCaller
 
         /// <param name='address'>
         /// </param>
-        /// <param name='start'>
-        /// </param>
         /// <param name='count'>
+        /// </param>
+        /// <param name='start'>
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -2049,7 +2053,7 @@ namespace EthereumSamuraiApiCaller
         /// <return>
         /// A response object containing the response body and response headers.
         /// </return>
-        public async Task<HttpOperationResponse<object>> ApiTransactionByAddressGetWithHttpMessagesAsync(string address, int? start = default(int?), int? count = default(int?), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<HttpOperationResponse<object>> ApiTransactionByAddressGetWithHttpMessagesAsync(string address, int? count = default(int?), int? start = default(int?), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (address == null)
             {
@@ -2063,8 +2067,8 @@ namespace EthereumSamuraiApiCaller
                 _invocationId = ServiceClientTracing.NextInvocationId.ToString();
                 Dictionary<string, object> tracingParameters = new Dictionary<string, object>();
                 tracingParameters.Add("address", address);
-                tracingParameters.Add("start", start);
                 tracingParameters.Add("count", count);
+                tracingParameters.Add("start", start);
                 tracingParameters.Add("cancellationToken", cancellationToken);
                 ServiceClientTracing.Enter(_invocationId, this, "ApiTransactionByAddressGet", tracingParameters);
             }
@@ -2073,13 +2077,13 @@ namespace EthereumSamuraiApiCaller
             var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/Transaction/{address}").ToString();
             _url = _url.Replace("{Address}", System.Uri.EscapeDataString(address));
             List<string> _queryParameters = new List<string>();
-            if (start != null)
-            {
-                _queryParameters.Add(string.Format("Start={0}", System.Uri.EscapeDataString(SafeJsonConvert.SerializeObject(start, SerializationSettings).Trim('"'))));
-            }
             if (count != null)
             {
                 _queryParameters.Add(string.Format("Count={0}", System.Uri.EscapeDataString(SafeJsonConvert.SerializeObject(count, SerializationSettings).Trim('"'))));
+            }
+            if (start != null)
+            {
+                _queryParameters.Add(string.Format("Start={0}", System.Uri.EscapeDataString(SafeJsonConvert.SerializeObject(start, SerializationSettings).Trim('"'))));
             }
             if (_queryParameters.Count > 0)
             {

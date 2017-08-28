@@ -66,11 +66,11 @@ namespace EthereumJobs.Config
 
             #region TransaferJobs
 
-            collection.AddSingleton<MonitoringTransferContracts>();
-            collection.AddSingleton<MonitoringTransferTransactions>();
-            collection.AddSingleton<TransferContractUserAssignmentJob>();
-            collection.AddSingleton<PoolRenewJob>();
-            collection.AddSingleton<TransferTransactionQueueJob>();
+            //collection.AddSingleton<MonitoringTransferContracts>();
+            //collection.AddSingleton<MonitoringTransferTransactions>();
+            //collection.AddSingleton<TransferContractUserAssignmentJob>();
+            //collection.AddSingleton<PoolRenewJob>();
+            //collection.AddSingleton<TransferTransactionQueueJob>();
 
             #endregion
 

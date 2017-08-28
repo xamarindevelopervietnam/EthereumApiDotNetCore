@@ -34,8 +34,7 @@ namespace Services.Erc20
                 erc20TokenAddresses?.ToList()
             );
 
-
-            return (response as IEnumerable<Erc20BalanceResponse>)?.Select(x => new AddressTokenBalance
+            return (response as IList<Erc20BalanceResponse>)?.Select(x => new AddressTokenBalance
             {
                 Balance           = BigInteger.Parse(x.Amount),
                 Erc20TokenAddress = x.Contract,

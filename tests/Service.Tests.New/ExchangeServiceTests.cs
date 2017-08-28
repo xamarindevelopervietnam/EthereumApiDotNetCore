@@ -42,7 +42,7 @@ namespace Tests
         private IExchangeContractService _exchangeService;
         private IEthereumTransactionService _transactionService;
         private IErcInterfaceService _ercService;
-        private ITransferContractService _transferContractService;
+        private IDepositContractService _depositContractService;
         private IPaymentService _paymentService;
 
         [TestInitialize]
@@ -53,8 +53,8 @@ namespace Tests
             _exchangeService = Config.Services.GetService<IExchangeContractService>();
             _transactionService = Config.Services.GetService<IEthereumTransactionService>();
             _ercService = Config.Services.GetService<IErcInterfaceService>();
-            _transferContractService = Config.Services.GetService<ITransferContractService>();
             _paymentService = Config.Services.GetService<IPaymentService>();
+            _depositContractService = Config.Services.GetService<IDepositContractService>();
         }
 
         #region TokenAdapter
@@ -65,10 +65,10 @@ namespace Tests
             //Transfer to transition contract
             ICoin colorCoin = await _coinRepository.GetCoinByAddress(_tokenAdapterAddress);
             BigInteger cashinAmount = new BigInteger(100);
-
+            //string trHash = await _depositContractService.ChangeDepositAdminContract(_clientTokenTransferAddress, _settings.DepositAdminContract.Address);
             await CashinTokens(_externalTokenAddress, _clientTokenTransferAddress, cashinAmount, _tokenAdapterAddress, _clientA);
-            string transferUser = await _transferContractService.GetTransferAddressUser(colorCoin.AdapterAddress, _clientTokenTransferAddress);
-            var currentBalance = await _transferContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
+            string transferUser = await _depositContractService.GetUserAddressForDepositContract(_clientTokenTransferAddress);
+            var currentBalance = await _depositContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
 
             Assert.AreEqual(_clientA.ToLower(), transferUser);
             Assert.IsTrue(currentBalance >= cashinAmount);
@@ -80,8 +80,8 @@ namespace Tests
             var colorCoin = await _coinRepository.GetCoinByAddress(_tokenAdapterAddress);
             var toAddress = _settings.EthereumMainAccount;
             await CashinTokens(_externalTokenAddress, _clientTokenTransferAddress, new BigInteger(100), _tokenAdapterAddress, _clientA);
-            var transferUser = await _transferContractService.GetTransferAddressUser(colorCoin.AdapterAddress, _clientTokenTransferAddress);
-            var currentBalance = await _transferContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
+            string transferUser = await _depositContractService.GetUserAddressForDepositContract(_clientTokenTransferAddress);
+            var currentBalance = await _depositContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
 
             Assert.AreEqual(transferUser, _clientA.ToLower());
 
@@ -94,8 +94,8 @@ namespace Tests
             while (await _transactionService.GetTransactionReceipt(transferHash) == null)
                 await Task.Delay(100);
 
-            var currentBalanceOnAdapter = await _transferContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
-            var newBalance = await _transferContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, toAddress);
+            var currentBalanceOnAdapter = await _depositContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
+            var newBalance = await _depositContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, toAddress);
 
             Assert.IsTrue(await _transactionService.IsTransactionExecuted(transferHash, Constants.GasForCoinTransaction));
             Assert.IsTrue(currentBalanceOnAdapter == 0);
@@ -108,8 +108,8 @@ namespace Tests
             var colorCoin = await _coinRepository.GetCoinByAddress(_tokenAdapterAddress);
             var toAddress = _ethereumCoinOwnerB;
             await CashinTokens(_externalTokenAddress, _clientTokenTransferAddress, new BigInteger(100), _tokenAdapterAddress, _clientA);
-            var transferUser = await _transferContractService.GetTransferAddressUser(colorCoin.AdapterAddress, _clientTokenTransferAddress);
-            var currentBalance = await _transferContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
+            string transferUser = await _depositContractService.GetUserAddressForDepositContract(_clientTokenTransferAddress);
+            var currentBalance = await _depositContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
             var change = new BigInteger(50);
 
             Assert.AreEqual(transferUser, _clientA.ToLower());
@@ -123,8 +123,8 @@ namespace Tests
             while (await _transactionService.GetTransactionReceipt(transferHash) == null)
                 await Task.Delay(100);
 
-            var currentBalanceOnAdapter = await _transferContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
-            var newBalance = await _transferContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, toAddress);
+            var currentBalanceOnAdapter = await _depositContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
+            var newBalance = await _depositContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, toAddress);
 
             Assert.IsTrue(await _transactionService.IsTransactionExecuted(transferHash, Constants.GasForCoinTransaction));
             Assert.IsTrue(currentBalanceOnAdapter == change);
@@ -145,8 +145,8 @@ namespace Tests
         {
             var colorCoin = await _coinRepository.GetCoinByAddress(_tokenAdapterAddress);
             await CashinTokens(_externalTokenAddress, _clientTokenTransferAddress, new BigInteger(100), _tokenAdapterAddress, _clientA);
-            var transferUser = await _transferContractService.GetTransferAddressUser(colorCoin.AdapterAddress, _clientTokenTransferAddress);
-            var oldBalance = await _transferContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
+            string transferUser = await _depositContractService.GetUserAddressForDepositContract(_clientTokenTransferAddress);
+            var oldBalance = await _depositContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
 
             Assert.AreEqual(_clientA.ToLower(), transferUser);
 
@@ -159,7 +159,7 @@ namespace Tests
                 await Task.Delay(100);
 
             Assert.IsTrue(await _transactionService.IsTransactionExecuted(cashout, Constants.GasForCoinTransaction));
-            var currentBalance = await _transferContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
+            var currentBalance = await _depositContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
             var newBalance = await _ercService.GetBalanceForExternalTokenAsync(_clientA, _externalTokenAddress);
 
             Assert.IsTrue(oldBalance <= newBalance);
@@ -174,8 +174,8 @@ namespace Tests
                     var colorCoin = await _coinRepository.GetCoinByAddress(_tokenAdapterAddress);
                     var toAddress = _settings.EthereumMainAccount;
                     await CashinTokens(_externalTokenAddress, _clientTokenTransferAddress, new BigInteger(100), _tokenAdapterAddress, _clientA);
-                    var transferUser = await _transferContractService.GetTransferAddressUser(colorCoin.AdapterAddress, _clientTokenTransferAddress);
-                    var currentBalance = await _transferContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
+                    string transferUser = await _depositContractService.GetUserAddressForDepositContract(_clientTokenTransferAddress);
+                    var currentBalance = await _depositContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
 
                     Assert.AreEqual(transferUser, _clientA.ToLower());
                     int threadAmount = 4;
@@ -201,8 +201,8 @@ namespace Tests
                             await Task.Delay(100);
                     }
 
-                    var currentBalanceOnAdapter = await _transferContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
-                    var newBalance = await _transferContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, toAddress);
+                    var currentBalanceOnAdapter = await _depositContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, _clientA);
+                    var newBalance = await _depositContractService.GetBalanceOnAdapter(colorCoin.AdapterAddress, toAddress);
 
                     //Assert.IsTrue(await _transactionService.IsTransactionExecuted(transferHash, Constants.GasForCoinTransaction));
                     Assert.IsTrue(currentBalanceOnAdapter == 0);
@@ -247,23 +247,23 @@ namespace Tests
 
         #region Common
 
-        [TestMethod]
-        public async Task SignOld()
-        {
-            string hex = "";
-            string privateKey = "";
+        //[TestMethod]
+        //public async Task SignOld()
+        //{
+        //    string hex = "";
+        //    string privateKey = "";
 
-            var secret = new EthECKey(privateKey); ;
-            var hash = hex.HexToByteArray();
-            var signature = secret.SignAndCalculateV(hash);
-            string r = signature.R.Length == 32 ? signature.R.ToHex() : "00" + signature.R.ToHex();
-            string s = signature.S.Length == 32 ? signature.S.ToHex() : "00" + signature.S.ToHex();
-            string v = new[] { signature.V }.ToHex();
+        //    var secret = new EthECKey(privateKey); ;
+        //    var hash = hex.HexToByteArray();
+        //    var signature = secret.SignAndCalculateV(hash);
+        //    string r = signature.R.Length == 32 ? signature.R.ToHex() : "00" + signature.R.ToHex();
+        //    string s = signature.S.Length == 32 ? signature.S.ToHex() : "00" + signature.S.ToHex();
+        //    string v = new[] { signature.V }.ToHex();
 
-            var arrHex = (r + s + v);
+        //    var arrHex = (r + s + v);
 
-            Trace.TraceInformation(arrHex);
-        }
+        //    Trace.TraceInformation(arrHex);
+        //}
 
 
         [TestMethod]
@@ -359,7 +359,7 @@ namespace Tests
                 await Task.Delay(100);
             var result = await _ercService.GetBalanceForExternalTokenAsync(transferAddress, externalTokenAddress);
             //cashin to adapter
-            var transferCashinHash = await _transferContractService.RecievePaymentFromTransferContract(transferAddress, coinAdapterAddress);
+            var transferCashinHash = await _depositContractService.RecievePaymentFromTransferContract(transferAddress, coinAdapterAddress);
             while (await _transactionService.GetTransactionReceipt(transferCashinHash) == null)
                 await Task.Delay(100);
         }

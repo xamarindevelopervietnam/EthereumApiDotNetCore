@@ -21,10 +21,13 @@ namespace Services
         Task<string> CreateDepositContractTrHashWithoutUserAsync();
 
         Task<string> GetUserAddressForDepositContract(string depositContractAddress);
+        Task<string> GetUserAddressForLegacyAdapterAsync(string depositContractAddress);
 
         Task<IDepositContract> GetDepositContract(string userAddress);
         Task<BigInteger> GetBalance(string depositContractAddress, string coinAdapterAddress);
-        Task<string> RecievePaymentFromTransferContract(string depositContractAddress, string coinAdapterAddress, BigInteger balance);
+        Task<BigInteger> GetBalanceOnAdapter(string adapterAddress, string clientAddress);
+        Task<string> RecievePaymentFromTransferContract(string depositContractAddress, string coinAdapterAddress);
+        Task<string> ChangeDepositAdminContract(string contractWithDependencyOnAdmin, string newAdminContract);
     }
 
     public class DepositContractService : IDepositContractService
@@ -46,7 +49,8 @@ namespace Services
             IPaymentService paymentService,
             Web3 web3,
             IDepositContractQueueService depositContractQueueService,
-            ICoinRepository coinRepository)
+            ICoinRepository coinRepository,
+            IErcInterfaceService ercInterfaceService)
         {
             _paymentService = paymentService;
             _web3 = web3;
@@ -56,6 +60,7 @@ namespace Services
             _depositContractUserAssignmentQueueService = depositContractUserAssignmentQueueService;
             _depositContractQueueService = depositContractQueueService;
             _coinRepository = coinRepository;
+            _ercInterfaceService = ercInterfaceService;
         }
 
         public async Task<string> CreateDepositContractTrHashWithoutUserAsync()
@@ -77,6 +82,33 @@ namespace Services
 
             var contract = _web3.Eth.GetContract(adminAbi, _settings.DepositAdminContract.Address);
             var function = contract.GetFunction("getDepositContractUser");
+            string userAddress =
+                await function.CallAsync<string>(depositContractAddress);
+
+            return userAddress;
+        }
+
+        public async Task<string> GetUserAddressForLegacyAdapterAsync(string depositContractAddress)
+        {
+            IDepositContract depositContract = await _depositContractRepository.GetByAddressAsync(depositContractAddress);
+
+            if (depositContract == null)
+            {
+                throw new ClientSideException(ExceptionType.WrongParams, $"Deposit contract with address {depositContractAddress} does not exist");
+            }
+
+            string ethAdapterAddress = depositContract.EthAdapterAddress;
+            ICoin coin = await _coinRepository.GetCoinByAddress(ethAdapterAddress);
+
+            if (coin == null)
+            {
+                throw new ClientSideException(ExceptionType.WrongParams, $"Coin with address {ethAdapterAddress} does not exist");
+            }
+
+            string coinAbi = _settings.CoinAbi;
+
+            var contract = _web3.Eth.GetContract(coinAbi, ethAdapterAddress);
+            var function = contract.GetFunction("getTransferAddressUser");
             string userAddress =
                 await function.CallAsync<string>(depositContractAddress);
 
@@ -136,7 +168,22 @@ namespace Services
             return balance;
         }
 
-        public async Task<string> RecievePaymentFromTransferContract(string depositContractAddress, string coinAdapterAddress, BigInteger balance)
+        public async Task<BigInteger> GetBalanceOnAdapter(string adapterAddress, string clientAddress)
+        {
+            var coinAFromDb = await _coinRepository.GetCoinByAddress(adapterAddress);
+            if (coinAFromDb == null)
+            {
+                throw new ClientSideException(ExceptionType.WrongParams, $"Coin adapter with {adapterAddress} address does not exist");
+            }
+
+            string abi = coinAFromDb.ContainsEth ? _settings.EthAdapterContract.Abi : _settings.TokenAdapterContract.Abi;
+            var contract = _web3.Eth.GetContract(abi, coinAFromDb.AdapterAddress);
+            var balance = contract.GetFunction("balanceOf");
+
+            return await balance.CallAsync<BigInteger>(clientAddress);
+        }
+
+        public async Task<string> RecievePaymentFromTransferContract(string depositContractAddress, string coinAdapterAddress)
         {
             ICoin coinDb = await _coinRepository.GetCoinByAddress(coinAdapterAddress);
 
@@ -172,6 +219,17 @@ namespace Services
                     new HexBigInteger(Constants.GasForCoinTransaction), new HexBigInteger(0), cashinParameters);
 
             return transactionHash;
+        }
+
+        public async Task<string> ChangeDepositAdminContract(string contractWithDependencyOnAdmin, string newAdminContract)
+        {
+            Contract contract = _web3.Eth.GetContract(_settings.DepositContract.Abi, contractWithDependencyOnAdmin);
+
+            Function changeFunction = contract.GetFunction("changeDepositAdminContract");
+
+            string trHash = await changeFunction.SendTransactionAsync(_settings.EthereumMainAccount, newAdminContract);
+
+            return trHash;
         }
     }
 }

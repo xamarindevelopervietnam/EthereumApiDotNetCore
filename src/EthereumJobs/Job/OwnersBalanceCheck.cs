@@ -9,7 +9,7 @@ using Services.New;
 
 namespace EthereumJobs.Job
 {
-    public class OwnersBalanceCheck
+    public class OwnersBalanceCheckJob
     {
         private readonly ILog                        _logger;
         private readonly IOwnerService               _ownerService;
@@ -21,7 +21,7 @@ namespace EthereumJobs.Job
 
 
 
-        public OwnersBalanceCheck(
+        public OwnersBalanceCheckJob(
             IBaseSettings settings,
             ILog logger,
             IOwnerService ownerService,

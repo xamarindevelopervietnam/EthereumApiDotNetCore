@@ -50,6 +50,7 @@ namespace EthereumJobs.Config
             collection.AddSingleton<MonitoringCoinTransactionJob>();
             collection.AddSingleton<MonitoringOperationJob>();
             collection.AddSingleton<CashinIndexingJob>();
+            collection.AddSingleton<OwnersBalanceCheckJob>();
 
             collection.AddSingleton<CoinEventResubmittJob>();
             
@@ -64,13 +65,13 @@ namespace EthereumJobs.Config
 
             #endregion
 
-            #region TransaferJobs
+            #region TransferJobs
 
-            //collection.AddSingleton<MonitoringTransferContracts>();
-            //collection.AddSingleton<MonitoringTransferTransactions>();
-            //collection.AddSingleton<TransferContractUserAssignmentJob>();
-            //collection.AddSingleton<PoolRenewJob>();
-            //collection.AddSingleton<TransferTransactionQueueJob>();
+            collection.AddSingleton<MonitoringTransferContracts>();
+            collection.AddSingleton<MonitoringTransferTransactions>();
+            collection.AddSingleton<TransferContractUserAssignmentJob>();
+            collection.AddSingleton<PoolRenewJob>();
+            collection.AddSingleton<TransferTransactionQueueJob>();
 
             #endregion
 

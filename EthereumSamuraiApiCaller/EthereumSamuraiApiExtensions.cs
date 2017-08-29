@@ -5,6 +5,8 @@
 namespace EthereumSamuraiApiCaller
 {
     using Models;
+    using System.Collections;
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -22,13 +24,13 @@ namespace EthereumSamuraiApiCaller
             /// </param>
             /// <param name='stopBlock'>
             /// </param>
-            /// <param name='start'>
-            /// </param>
             /// <param name='count'>
             /// </param>
-            public static object ApiAddressHistoryByAddressGet(this IEthereumSamuraiApi operations, string address, long? startBlock = default(long?), long? stopBlock = default(long?), int? start = default(int?), int? count = default(int?))
+            /// <param name='start'>
+            /// </param>
+            public static object ApiAddressHistoryByAddressGet(this IEthereumSamuraiApi operations, string address, long? startBlock = default(long?), long? stopBlock = default(long?), int? count = default(int?), int? start = default(int?))
             {
-                return operations.ApiAddressHistoryByAddressGetAsync(address, startBlock, stopBlock, start, count).GetAwaiter().GetResult();
+                return operations.ApiAddressHistoryByAddressGetAsync(address, startBlock, stopBlock, count, start).GetAwaiter().GetResult();
             }
 
             /// <param name='operations'>
@@ -40,16 +42,16 @@ namespace EthereumSamuraiApiCaller
             /// </param>
             /// <param name='stopBlock'>
             /// </param>
-            /// <param name='start'>
-            /// </param>
             /// <param name='count'>
+            /// </param>
+            /// <param name='start'>
             /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task<object> ApiAddressHistoryByAddressGetAsync(this IEthereumSamuraiApi operations, string address, long? startBlock = default(long?), long? stopBlock = default(long?), int? start = default(int?), int? count = default(int?), CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task<object> ApiAddressHistoryByAddressGetAsync(this IEthereumSamuraiApi operations, string address, long? startBlock = default(long?), long? stopBlock = default(long?), int? count = default(int?), int? start = default(int?), CancellationToken cancellationToken = default(CancellationToken))
             {
-                using (var _result = await operations.ApiAddressHistoryByAddressGetWithHttpMessagesAsync(address, startBlock, stopBlock, start, count, null, cancellationToken).ConfigureAwait(false))
+                using (var _result = await operations.ApiAddressHistoryByAddressGetWithHttpMessagesAsync(address, startBlock, stopBlock, count, start, null, cancellationToken).ConfigureAwait(false))
                 {
                     return _result.Body;
                 }
@@ -76,6 +78,36 @@ namespace EthereumSamuraiApiCaller
             public static async Task<object> ApiBalanceGetBalanceByAddressGetAsync(this IEthereumSamuraiApi operations, string address, CancellationToken cancellationToken = default(CancellationToken))
             {
                 using (var _result = await operations.ApiBalanceGetBalanceByAddressGetWithHttpMessagesAsync(address, null, cancellationToken).ConfigureAwait(false))
+                {
+                    return _result.Body;
+                }
+            }
+
+            /// <param name='operations'>
+            /// The operations group for this extension method.
+            /// </param>
+            /// <param name='address'>
+            /// </param>
+            /// <param name='contracts'>
+            /// </param>
+            public static object ApiErc20BalanceGetErc20BalanceByAddressPost(this IEthereumSamuraiApi operations, string address, IList<string> contracts = default(IList<string>))
+            {
+                return operations.ApiErc20BalanceGetErc20BalanceByAddressPostAsync(address, contracts).GetAwaiter().GetResult();
+            }
+
+            /// <param name='operations'>
+            /// The operations group for this extension method.
+            /// </param>
+            /// <param name='address'>
+            /// </param>
+            /// <param name='contracts'>
+            /// </param>
+            /// <param name='cancellationToken'>
+            /// The cancellation token.
+            /// </param>
+            public static async Task<object> ApiErc20BalanceGetErc20BalanceByAddressPostAsync(this IEthereumSamuraiApi operations, string address, IList<string> contracts = default(IList<string>), CancellationToken cancellationToken = default(CancellationToken))
+            {
+                using (var _result = await operations.ApiErc20BalanceGetErc20BalanceByAddressPostWithHttpMessagesAsync(address, contracts, null, cancellationToken).ConfigureAwait(false))
                 {
                     return _result.Body;
                 }
@@ -116,13 +148,13 @@ namespace EthereumSamuraiApiCaller
             /// </param>
             /// <param name='stopBlock'>
             /// </param>
-            /// <param name='start'>
-            /// </param>
             /// <param name='count'>
             /// </param>
-            public static object ApiInternalMessagesByAddressGet(this IEthereumSamuraiApi operations, string address, long? startBlock = default(long?), long? stopBlock = default(long?), int? start = default(int?), int? count = default(int?))
+            /// <param name='start'>
+            /// </param>
+            public static object ApiInternalMessagesByAddressGet(this IEthereumSamuraiApi operations, string address, long? startBlock = default(long?), long? stopBlock = default(long?), int? count = default(int?), int? start = default(int?))
             {
-                return operations.ApiInternalMessagesByAddressGetAsync(address, startBlock, stopBlock, start, count).GetAwaiter().GetResult();
+                return operations.ApiInternalMessagesByAddressGetAsync(address, startBlock, stopBlock, count, start).GetAwaiter().GetResult();
             }
 
             /// <param name='operations'>
@@ -134,16 +166,16 @@ namespace EthereumSamuraiApiCaller
             /// </param>
             /// <param name='stopBlock'>
             /// </param>
-            /// <param name='start'>
-            /// </param>
             /// <param name='count'>
+            /// </param>
+            /// <param name='start'>
             /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task<object> ApiInternalMessagesByAddressGetAsync(this IEthereumSamuraiApi operations, string address, long? startBlock = default(long?), long? stopBlock = default(long?), int? start = default(int?), int? count = default(int?), CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task<object> ApiInternalMessagesByAddressGetAsync(this IEthereumSamuraiApi operations, string address, long? startBlock = default(long?), long? stopBlock = default(long?), int? count = default(int?), int? start = default(int?), CancellationToken cancellationToken = default(CancellationToken))
             {
-                using (var _result = await operations.ApiInternalMessagesByAddressGetWithHttpMessagesAsync(address, startBlock, stopBlock, start, count, null, cancellationToken).ConfigureAwait(false))
+                using (var _result = await operations.ApiInternalMessagesByAddressGetWithHttpMessagesAsync(address, startBlock, stopBlock, count, start, null, cancellationToken).ConfigureAwait(false))
                 {
                     return _result.Body;
                 }
@@ -199,13 +231,13 @@ namespace EthereumSamuraiApiCaller
             /// </param>
             /// <param name='address'>
             /// </param>
-            /// <param name='start'>
-            /// </param>
             /// <param name='count'>
             /// </param>
-            public static object ApiTransactionByAddressGet(this IEthereumSamuraiApi operations, string address, int? start = default(int?), int? count = default(int?))
+            /// <param name='start'>
+            /// </param>
+            public static object ApiTransactionByAddressGet(this IEthereumSamuraiApi operations, string address, int? count = default(int?), int? start = default(int?))
             {
-                return operations.ApiTransactionByAddressGetAsync(address, start, count).GetAwaiter().GetResult();
+                return operations.ApiTransactionByAddressGetAsync(address, count, start).GetAwaiter().GetResult();
             }
 
             /// <param name='operations'>
@@ -213,16 +245,16 @@ namespace EthereumSamuraiApiCaller
             /// </param>
             /// <param name='address'>
             /// </param>
-            /// <param name='start'>
-            /// </param>
             /// <param name='count'>
+            /// </param>
+            /// <param name='start'>
             /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task<object> ApiTransactionByAddressGetAsync(this IEthereumSamuraiApi operations, string address, int? start = default(int?), int? count = default(int?), CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task<object> ApiTransactionByAddressGetAsync(this IEthereumSamuraiApi operations, string address, int? count = default(int?), int? start = default(int?), CancellationToken cancellationToken = default(CancellationToken))
             {
-                using (var _result = await operations.ApiTransactionByAddressGetWithHttpMessagesAsync(address, start, count, null, cancellationToken).ConfigureAwait(false))
+                using (var _result = await operations.ApiTransactionByAddressGetWithHttpMessagesAsync(address, count, start, null, cancellationToken).ConfigureAwait(false))
                 {
                     return _result.Body;
                 }

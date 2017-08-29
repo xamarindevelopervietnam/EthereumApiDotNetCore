@@ -5,20 +5,24 @@ namespace Core
     public class Constants
     {
         public const string BigIntTemplate =  "^[1-9][0-9]*$";
+        public const string BigIntAllowZeroTemplate = "^([1-9][0-9])|0*$";
         /// <summary>
         /// Used to change table and queue names in testing enviroment
         /// </summary>
         public static string StoragePrefix { get; set; } = "";
-
-        public const string EmptyEthereumAddress = "0x0000000000000000000000000000000000000000";
+        public const string AddressForRoundRobinTransactionSending = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+        public const string EmptyEthereumAddress =                   "0x0000000000000000000000000000000000000000";
         public const string EventTraceTable = "EventTrace";
+        public const string DepositContractsAssignmentQueue = "deposit-contracts-user-assignment-queue";
+        public const string DepositContractsQueue = "deposit-contracts-queue";
         public const string TransferContractUserAssignmentQueueName = "transfer-contract-user-assignment";
         public const string SlackNotifierQueue = "slack-notifications";
         public const string EthereumContractQueue = "ethereum-contract-queue";
         public const string EthereumOutQueue = "ethereum-queue-out";
         public const string EmailNotifierQueue = "emailsqueue";
         public const string ContractPoolQueuePrefix = "ethereum-tc-pool";
-
+        public const string ContractDepositQueue = "ethereum-contract-deposit-queue";
+        public const string ContractDepositCashinQueue = "ethereum-contract-deposi-queue";
         /// <summary>
         /// Used to internal monitoring of refill transactions
         /// </summary>
@@ -51,6 +55,8 @@ namespace Core
         public const string TransactionsTable = "Transactions";
         public const string CoinFiltersTable = "CoinFilters";
         public const string CoinTable = "CoinTable";
+        public const string Erc20Table = "Erc20";
+        public const string DepositContractsTable = "DepositContracts";
         public const string CoinTableInedex = "CoinTableIndex";
 
         public const int GasForUserContractTransafer = 50000;
@@ -73,6 +79,7 @@ namespace Core
         public const string TransferContractTable = "TransferContract";
         public const string EthereumContractsBlob = "EthereumContracts";
         public const string UserTransferWalletTable = "UserTransferWallet";
+        public const string UserDepositWalletTable = "UserDepositWalletTable";
         public const string ExternalTokenTable = "ExternalToken";
         public const string CoinEventEntityTable = "CoinEventEntity";
         public const string UserPaymentHistoryTable = "UserPaymentHistory";
@@ -83,6 +90,8 @@ namespace Core
         public const string CashInEventTable = "CashInEvent";
         public const string PendingOperationsQueue = "pending-operations";
         public const string NonceCacheTable = "NonceCache";
+        public const string OwnerTable = "Owner";
+        public static string OwnerRepository;
         public static BigInteger DefaultTransactionGas = 21000;
     }
 

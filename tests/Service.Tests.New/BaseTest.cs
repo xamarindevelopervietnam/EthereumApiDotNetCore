@@ -15,8 +15,8 @@ namespace Tests
         public static string ColorCoin = "Lykke";
         public static string EthCoin = "Eth";
 
-        protected static string _tokenAdapterAddress = "0x1e8e8ccbd9a7a8d82875054aa8342159d96356a9";//"0x27b1ad3f1ae08eec8205bcbe91166b6387d67c4f";
-        protected static string _clientTokenTransferAddress = "0x7ff01d3225726eb3dd3356fc57e71e5ec0aab042";//"0x967ddcf62c2ecec1c4d231c7498c287b857846e7";
+        protected static string _tokenAdapterAddress = "0xe293047d404d5495eef277e3e2a0528284dccace";
+        protected static string _clientTokenTransferAddress = "0xf87bbc410e051f32de3fcb0791a5e22c59eaf4d1";//"0x967ddcf62c2ecec1c4d231c7498c287b857846e7";
         protected static string _externalTokenAddress = "0xce2ef46ecc168226f33b6f6b8a56e90450d0d2c0";//"0x79e34063d05324e0bffc19901963d9ae5b101fba";
         protected static string _ethereumCoinOwnerB = "0xd513BeA430322c488600Af6eE094aB32238C7169";
         protected const string _clientA = "0x46Ea3e8d85A06cBBd8c6a491a09409f5B59BEa28";

@@ -30,6 +30,7 @@ namespace EthereumJobs.Job
         private readonly IUserTransferWalletRepository _userTransferWalletRepository;
         private readonly IEthereumTransactionService _ethereumTransactionService;
         private readonly TimeSpan _broadcastMonitoringPeriodSeconds;
+        private readonly IUserDepositWalletRepository _userDepositWalletRepository;
 
         public MonitoringCoinTransactionJob(ILog log, ICoinTransactionService coinTransactionService,
             IBaseSettings settings, ISlackNotifier slackNotifier, ICoinEventService coinEventService,
@@ -38,6 +39,7 @@ namespace EthereumJobs.Job
             ITransactionEventsService transactionEventsService,
             IEventTraceRepository eventTraceRepository,
             IUserTransferWalletRepository userTransferWalletRepository,
+            IUserDepositWalletRepository userDepositWalletRepository,
             IEthereumTransactionService ethereumTransactionService)
         {
             _ethereumTransactionService = ethereumTransactionService;
@@ -52,16 +54,12 @@ namespace EthereumJobs.Job
             _eventTraceRepository = eventTraceRepository;
             _userTransferWalletRepository = userTransferWalletRepository;
             _broadcastMonitoringPeriodSeconds = TimeSpan.FromSeconds(_settings.BroadcastMonitoringPeriodSeconds);
+            _userDepositWalletRepository = userDepositWalletRepository;
         }
 
         [QueueTrigger(Constants.TransactionMonitoringQueue, 100, true)]
         public async Task Execute(CoinTransactionMessage transaction, QueueTriggeringContext context)
         {
-            if (transaction?.TransactionHash == "0xea0a914111f572b89f599e45ed35ffebef0bbb57bbe3d393095110c5525b3740")
-            {
-                return;
-            }
-
             ICoinTransaction coinTransaction = null;
             try
             {
@@ -85,7 +83,7 @@ namespace EthereumJobs.Job
                 return;
             }
 
-            if ((coinTransaction == null || coinTransaction.Error || coinTransaction.ConfirmationLevel == 0) && 
+            if ((coinTransaction == null || coinTransaction.Error || coinTransaction.ConfirmationLevel == 0) &&
                 (DateTime.UtcNow - transaction.PutDateTime > _broadcastMonitoringPeriodSeconds))
             {
                 await RepeatOperationTillWin(transaction);
@@ -115,7 +113,7 @@ namespace EthereumJobs.Job
                     {
                         ICoinEvent coinEvent = await GetCoinEvent(transaction.TransactionHash, transaction.OperationId, true);
                         await _slackNotifier.ErrorAsync($"EthereumCoreService: Transaction with hash {transaction.TransactionHash} has an Error!({coinEvent.CoinEventType})");
-                        if (coinEvent.CoinEventType == CoinEventType.CashoutStarted || 
+                        if (coinEvent.CoinEventType == CoinEventType.CashoutStarted ||
                             coinEvent.CoinEventType == CoinEventType.CashoutCompleted)
                         {
                             //Drop cashout operation;
@@ -156,7 +154,7 @@ namespace EthereumJobs.Job
             {
                 case CoinEventType.CashinStarted:
                 case CoinEventType.CashinCompleted:
-                    await UpdateUserTransferWallet(coinEvent.FromAddress, coinEvent.ToAddress);
+                    await UpdateUserCashinLockAsync(coinEvent.FromAddress, coinEvent.ToAddress, coinEvent.ContractAddress);
                     return;
                 default:
                     break;
@@ -191,7 +189,7 @@ namespace EthereumJobs.Job
                         }
 
                         //transferContract - userAddress
-                        await UpdateUserTransferWallet(coinEvent.FromAddress, coinEvent.ToAddress.ToLower());
+                        await UpdateUserCashinLockAsync(coinEvent.FromAddress, coinEvent.ToAddress, coinEvent.ContractAddress);
                         coinEvent.Amount = cashinEvent.Amount;
                         coinEvent.CoinEventType++;
                         break;
@@ -230,6 +228,24 @@ namespace EthereumJobs.Job
             return coinEvent;
         }
 
+        private async Task UpdateUserCashinLockAsync(string depositContractAddress, string userAddress, string coinAdapterAddress)
+        {
+            //TODO: Check it
+            var userTransferContract = await _userTransferWalletRepository.GetUserContractAsync(userAddress, depositContractAddress);
+            if (userTransferContract != null)
+            {
+                await UpdateUserTransferWallet(depositContractAddress, userAddress);
+            }
+            else
+            {
+                var userDepositContract = await _userDepositWalletRepository.GetUserContractAsync(userAddress, depositContractAddress, coinAdapterAddress);
+                if (userDepositContract != null)
+                {
+                    await UpdateUserDepositWallet(depositContractAddress, userAddress, coinAdapterAddress);
+                }
+            }
+        }
+
         private async Task UpdateUserTransferWallet(string transferContractAddress, string userAddress)
         {
             await _userTransferWalletRepository.ReplaceAsync(new UserTransferWallet()
@@ -238,6 +254,18 @@ namespace EthereumJobs.Job
                 TransferContractAddress = transferContractAddress,
                 UpdateDate = DateTime.UtcNow,
                 UserAddress = userAddress
+            });
+        }
+
+        private async Task UpdateUserDepositWallet(string depositContractAddress, string userAddress, string coinAdapterAddress)
+        {
+            await _userDepositWalletRepository.ReplaceAsync(new UserDepositWallet()
+            {
+                LastBalance = "",
+                CoinAdapterAddress = coinAdapterAddress,
+                DepositContractAddress = depositContractAddress,
+                UserAddress = userAddress,
+                UpdateDate = DateTime.UtcNow
             });
         }
 

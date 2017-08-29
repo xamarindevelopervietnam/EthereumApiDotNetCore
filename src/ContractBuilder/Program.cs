@@ -17,6 +17,13 @@ using SigningServiceApiCaller.Models;
 using Services.Coins;
 using RabbitMQ;
 using Common.Log;
+using Services.New;
+using Core.Repositories;
+using Core;
+using EthereumApi.Models;
+using System.Numerics;
+using Nethereum.Util;
+using EthereumJobs.Job;
 
 namespace ContractBuilder
 {
@@ -32,6 +39,8 @@ namespace ContractBuilder
     }
     public class Program
     {
+        private static string _oldMainExchangeAddress;
+
         public static IServiceProvider ServiceProvider { get; set; }
 
         public static void Main(string[] args)
@@ -43,7 +52,8 @@ namespace ContractBuilder
                 .AddJsonFile("appsettings.json").AddEnvironmentVariables();
             var configuration = configurationBuilder.Build();
 
-            var settings = GetCurrentSettings();
+            var settings = GetCurrentSettingsFromUrl();
+            SaveSettings(settings);
 
             IServiceCollection collection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             collection.AddSingleton<IBaseSettings>(settings.EthereumCore);
@@ -55,7 +65,7 @@ namespace ContractBuilder
             ServiceProvider = collection.BuildServiceProvider();
             RegisterRabbitQueueEx.RegisterRabbitQueue(collection, settings.EthereumCore, ServiceProvider.GetService<ILog>());
             RegisterDependency.RegisterServices(collection);
-
+            EthereumJobs.Config.RegisterDependency.RegisterJobs(collection);
             //var web3 = ServiceProvider.GetService<Web3>();
             //web3.Eth.GetBalance.SendRequestAsync("");
             // web3.Eth.Transactions.SendTransaction.SendRequestAsync(new Nethereum.RPC.Eth.DTOs.TransactionInput()
@@ -66,7 +76,7 @@ namespace ContractBuilder
             //var stringKey = Encoding.Unicode.GetString(key);
             GetAllContractInJson();
             ServiceProvider = collection.BuildServiceProvider();
-
+            ServiceProvider.ActivateRequestInterceptor();
             //var lykkeSigningAPI = ServiceProvider.GetService<ILykkeSigningAPI>();
             //lykkeSigningAPI.ApiEthereumAddkeyPost(new AddKeyRequest()
             //{
@@ -74,11 +84,11 @@ namespace ContractBuilder
             //});
 
             //var service = ServiceProvider.GetService<IErcInterfaceService>();
-            //service.Transfer("0xce2ef46ecc168226f33b6f6b8a56e90450d0d2c0", settings.EthereumMainAccount,
-            //    "0x6e95184c02c39369ee9449f85aee42badc6910fd", new System.Numerics.BigInteger(101)).Wait();
+            //service.Transfer("0xce2ef46ecc168226f33b6f6b8a56e90450d0d2c0", settings.EthereumCore.EthereumMainAccount,
+            //    "0xf87bbc410e051f32de3fcb0791a5e22c59eaf4d1", new System.Numerics.BigInteger(101)).Wait();
             //var paymentService = ServiceProvider.GetService<IPaymentService>();
-            //    string result = paymentService.SendEthereum(settings.EthereumMainAccount, 
-            //    "0xbb0a9c08030898cdaf1f28633f0d3c8556155482", new System.Numerics.BigInteger(5000000000000000)).Result;
+            //    string result = paymentService.SendEthereum(settings.EthereumCore.EthereumMainAccount,
+            //    "0xf87bbc410e051f32de3fcb0791a5e22c59eaf4d1", new System.Numerics.BigInteger(5000000000000000)).Result;
             //var coinEv = ServiceProvider.GetService<ICoinEventService>();
             //var ev1 = coinEv.GetCoinEvent("0xbfb8d6a561c1a088c347efb989e19cb02c1028b34a337e001b146fd1360dc714").Result;
             //var ev2 = coinEv.GetCoinEvent("0xa0876a676d695ab145fcf70ac0b2ae02e8b00351a5193352ffb37ad37dce6848").Result;
@@ -101,6 +111,11 @@ namespace ContractBuilder
                 Console.WriteLine("3. Deploy coin contract using local json file");
                 Console.WriteLine("4. Deploy transfer");
                 Console.WriteLine("5. Deploy BCAP Token");
+                Console.WriteLine("6. Deploy main exchange contract with multiple owners!(Make sure that jobs are stopped)");
+                Console.WriteLine("7. Add more owners to Main Exchange Contract with multiple owners!(Add addresses with some eth on it)");
+                Console.WriteLine("9. Deploy And Migrate To NM!(Make sure that jobs are stopped)");
+                Console.WriteLine("10. Send transaction to MainExchange!(Make sure that jobs are stopped)");
+                Console.WriteLine("11. Deploy deposit admin contract");
                 Console.WriteLine("0. Exit");
 
                 var input = Console.ReadLine();
@@ -122,6 +137,24 @@ namespace ContractBuilder
                     case "5":
                         DeployBCAP().Wait();
                         break;
+                    case "6":
+                        DeployAndMigrateMainExchangeContractWithMultipleOwners().Wait();
+                        break;
+                    case "7":
+                        AddOwners().Wait();
+                        break;
+                    //case "8":
+                    //    MigrateAdapter(,).Wait();
+                    //    break;
+                    case "9":
+                        DeployAndMigrateToNM().Wait();
+                        break;
+                    case "10":
+                        SendTransactionFromMainExchange().Wait();
+                        break;
+                    case "11":
+                        DeployDepositAdminContract().Wait();
+                        break;
                     default:
                         Console.WriteLine("Bad input!");
                         continue;
@@ -134,7 +167,7 @@ namespace ContractBuilder
         private class EthereumContractExtended
         {
             public string EthereumContractName { get; set; }
-            public EthereumContract Contract { get; set; }
+            public Core.Settings.EthereumContract Contract { get; set; }
         }
 
         private static void GetAllContractInJson()
@@ -153,7 +186,7 @@ namespace ContractBuilder
                 ethereumContracts.Add(new EthereumContractExtended()
                 {
                     EthereumContractName = fi.Name,
-                    Contract = new EthereumContract()
+                    Contract = new Core.Settings.EthereumContract()
                     {
                         Abi = contentAbi,
                         ByteCode = byteCode,
@@ -205,14 +238,14 @@ namespace ContractBuilder
                 var bytecode = GetFileContent($"{transferName}.bin");
 
                 string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode, clientAddress);
-                settings.EthereumCore.TokenTransferContract = new EthereumContract
+                settings.EthereumCore.TokenTransferContract = new Core.Settings.EthereumContract
                 {
                     Address = contractAddress,
                     Abi = abi,
                     ByteCode = bytecode
                 };
                 Console.WriteLine("New contract: " + contractAddress);
-                SaveSettings(settings.EthereumCore);
+                SaveSettings(settings);
 
                 Console.WriteLine("Contract address stored in generalsettings.json file");
             }
@@ -236,7 +269,7 @@ namespace ContractBuilder
 
                 Console.WriteLine("New contract: " + contractAddress);
 
-                SaveSettings(settings.EthereumCore);
+                SaveSettings(settings);
 
                 Console.WriteLine("Contract address stored in generalsettings.json file");
             }
@@ -269,13 +302,13 @@ namespace ContractBuilder
                 var settings = GetCurrentSettings();
                 string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode, settings.EthereumCore.MainExchangeContract.Address);
                 if (settings.EthereumCore.CoinContracts == null)
-                    settings.EthereumCore.CoinContracts = new Dictionary<string, EthereumContract>();
+                    settings.EthereumCore.CoinContracts = new Dictionary<string, Core.Settings.EthereumContract>();
 
-                settings.EthereumCore.CoinContracts[name] = new EthereumContract { Address = contractAddress, Abi = abi };
+                settings.EthereumCore.CoinContracts[name] = new Core.Settings.EthereumContract { Address = contractAddress, Abi = abi };
 
                 Console.WriteLine("New coin contract: " + contractAddress);
 
-                SaveSettings(settings.EthereumCore);
+                SaveSettings(settings);
 
                 Console.WriteLine("Contract address stored in generalsettings.json file");
             }
@@ -296,12 +329,245 @@ namespace ContractBuilder
                 var bytecode = GetFileContent("MainExchange.bin");
                 string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode);
 
-                settings.EthereumCore.MainExchangeContract = new EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
+                settings.EthereumCore.MainExchangeContract = new Core.Settings.EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
                 Console.WriteLine("New main exchange contract: " + contractAddress);
 
-                SaveSettings(settings.EthereumCore);
+                SaveSettings(settings);
 
                 Console.WriteLine("Contract address stored in generalsettings.json file");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Action failed!");
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        static async Task<string> DeployDepositAdminContract()
+        {
+            Console.WriteLine("Begin DeployDepositAdminContract process");
+            try
+            {
+                var settings = GetCurrentSettings();
+                var abi = GetFileContent("DepositAdminContract.abi");
+                var bytecode = GetFileContent("DepositAdminContract.bin");
+                string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode);
+                IBaseSettings baseSettings = ServiceProvider.GetService<IBaseSettings>();
+                
+                Console.WriteLine("New deposit admin contract address: " + contractAddress);
+
+                SaveSettings(settings);
+
+                Console.WriteLine("Contract address stored in generalsettings.json file");
+
+                return contractAddress;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Action failed!");
+                Console.WriteLine(e.Message);
+
+                return "";
+            }
+        }
+
+        #region MO
+
+        static async Task DeployAndMigrateMainExchangeContractWithMultipleOwners()
+        {
+            var abi = GetFileContent("MainExchangeMultipleOwners.abi");
+            string newContractAddress = await DeployMainExchangeContractWithMultipleOwners();
+            if (string.IsNullOrEmpty(newContractAddress))
+            {
+                Console.WriteLine("Deploying failed. Can't proceed with migration");
+
+                return;
+            }
+
+            await MigrateAdapter(newContractAddress, abi);
+        }
+
+        static async Task<string> DeployMainExchangeContractWithMultipleOwners()
+        {
+            Console.WriteLine("Begin main exchange contract deployment process");
+            try
+            {
+                var settings = GetCurrentSettings();
+                var abi = GetFileContent("MainExchangeMultipleOwners.abi");
+                var bytecode = GetFileContent("MainExchangeMultipleOwners.bin");
+                string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode);
+                IBaseSettings baseSettings = ServiceProvider.GetService<IBaseSettings>();
+                _oldMainExchangeAddress = settings.EthereumCore.MainExchangeContract.Address;
+                settings.EthereumCore.MainExchangeContract = new Core.Settings.EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
+                Console.WriteLine("New main exchange contract: " + contractAddress);
+
+                SaveSettings(settings);
+
+                Console.WriteLine("Contract address stored in generalsettings.json file");
+
+                return contractAddress;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Action failed!");
+                Console.WriteLine(e.Message);
+
+                return "";
+            }
+        }
+
+        #endregion
+
+        #region NM
+
+        static async Task DeployAndMigrateToNM()
+        {
+            var abi = GetFileContent("MainExchangeNM.abi");
+            string newContractAddress = await DeployMainExchangeContractNM();
+            if (string.IsNullOrEmpty(newContractAddress))
+            {
+                Console.WriteLine("Deploying failed. Can't proceed with migration");
+
+                return;
+            }
+
+            await MigrateAdapter(newContractAddress, abi);
+        }
+
+        static async Task<string> DeployMainExchangeContractNM()
+        {
+            Console.WriteLine("Begin main exchange contract deployment process");
+            try
+            {
+                var settings = GetCurrentSettings();
+                var abi = GetFileContent("MainExchangeNM.abi");
+                var bytecode = GetFileContent("MainExchangeNM.bin");
+                string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode);
+
+                settings.EthereumCore.MainExchangeContract = new Core.Settings.EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
+                Console.WriteLine("New main exchange contract: " + contractAddress);
+
+                SaveSettings(settings);
+                Console.WriteLine("Contract address stored in generalsettings.json file");
+
+                return contractAddress;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Action failed!");
+                Console.WriteLine(e.Message);
+
+                return "";
+            }
+        }
+
+        static async Task SendTransactionFromMainExchange()
+        {
+            string operationId = "";
+            IPendingOperationService pendingOperationService = ServiceProvider.GetService<IPendingOperationService>();
+            try
+            {
+                MonitoringOperationJob job = ServiceProvider.GetService<MonitoringOperationJob>();
+                IExchangeContractService exchangeContractService = ServiceProvider.GetService<IExchangeContractService>();
+                string filePath = Path.Combine(AppContext.BaseDirectory, "transferTransaction.txt");
+                var content = File.ReadAllText(filePath);
+                TransferModel model = Newtonsoft.Json.JsonConvert.DeserializeObject<TransferModel>(content);
+                var addressUtil = new AddressUtil();
+                BigInteger amount = BigInteger.Parse(model.Amount);
+                operationId = await pendingOperationService.TransferWithNoChecks(model.Id, model.CoinAdapterAddress,
+                    addressUtil.ConvertToChecksumAddress(model.FromAddress), addressUtil.ConvertToChecksumAddress(model.ToAddress), amount, model.Sign);
+
+                Console.WriteLine($"OperationId - {operationId}");
+                await job.ProcessOperation(new Services.New.Models.OperationHashMatchMessage()
+                {
+                    OperationId = operationId,
+                },null, exchangeContractService.TransferWithoutSignCheck);
+
+                Console.WriteLine("Start removing from processing queue");
+                await pendingOperationService.RemoveFromPendingOperationQueue(operationId);
+                Console.WriteLine("Stop removing from processing queue");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"{e.Message} - {e.StackTrace}");
+                Console.WriteLine("Start removing from processing queue");
+                await pendingOperationService.RemoveFromPendingOperationQueue(operationId);
+                Console.WriteLine("Stop removing from processing queue");
+            }
+        }
+        #endregion
+
+        static async Task MigrateAdapter(string mainExchangeAddress, string mainExchangeAbi)
+        {
+            Console.WriteLine("Begin ethereum adapter migration process");
+            try
+            {
+                //Console.WriteLine("Type new main exchange address:");
+                //string newMainExchangeAddress = Console.ReadLine().Trim().ToLower();
+                var settings = GetCurrentSettings();
+                var exchangeService = ServiceProvider.GetService<IExchangeContractService>();
+                var ethereumTransactionService = ServiceProvider.GetService<IEthereumTransactionService>();
+                IEnumerable<ICoin> adapters = await ServiceProvider.GetService<ICoinRepository>().GetAll();
+                foreach (var adapter in adapters)
+                {
+                    string transactionHash = await exchangeService.ChangeMainContractInCoin(adapter.AdapterAddress,
+                        mainExchangeAddress, mainExchangeAbi);
+                    Console.WriteLine($"Coin adapter: {adapter.AdapterAddress} - reassign main exchange {transactionHash}");
+
+                    while (!await ethereumTransactionService.IsTransactionExecuted(transactionHash, Constants.GasForCoinTransaction))
+                    {
+                        await Task.Delay(400);
+                    }
+                }
+
+                IBaseSettings baseSettings = ServiceProvider.GetService<IBaseSettings>();
+                baseSettings.MainExchangeContract.Address = mainExchangeAddress;
+                baseSettings.MainExchangeContract.Abi = mainExchangeAbi;
+
+                Console.WriteLine("Coin adapters has been migrated");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Action failed!");
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        static async Task AddOwners()
+        {
+            Console.WriteLine("Begin adding owners to main exchange process");
+            try
+            {
+                var settings = GetCurrentSettings();
+                var exchangeService = ServiceProvider.GetService<IExchangeContractService>();
+                var ownerService = ServiceProvider.GetService<IOwnerService>();
+                IBaseSettings baseSettings = ServiceProvider.GetService<IBaseSettings>();
+                //baseSettings.MainExchangeContract.Address = "0xf5f0f53f86b7a5a92f150b1cf0edc12969b51f7e";
+                baseSettings.MainExchangeContract.Abi = GetFileContent("MainExchangeMultipleOwners.abi");
+
+                Console.WriteLine("Put public addressses below, type -1 to commit owners to main exchange");
+                string input = "";
+                List<IOwner> owners = new List<IOwner>();
+                while (input != "-1")
+                {
+                    input = Console.ReadLine();
+                    if (exchangeService.IsValidAddress(input))
+                    {
+                        owners.Add(new Owner()
+                        {
+                            Address = input
+                        });
+                    }
+                    else if (input != "-1")
+                    {
+                        Console.WriteLine($"{input} is not a valid address");
+                    }
+                }
+                Console.WriteLine("Start commiting transaction!");
+                await ownerService.AddOwners(owners);
+                Console.WriteLine("Owners were added successfuly!");
+
+                Console.WriteLine("Completed");
             }
             catch (Exception e)
             {
@@ -320,10 +586,10 @@ namespace ContractBuilder
                 var bytecode = GetFileContent("BCAPToken.bin");
                 string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode, settings.EthereumCore.EthereumMainAccount);
 
-                settings.EthereumCore.MainExchangeContract = new EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
+                settings.EthereumCore.MainExchangeContract = new Core.Settings.EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
                 Console.WriteLine("New BCAP Token: " + contractAddress);
 
-                SaveSettings(settings.EthereumCore);
+                SaveSettings(settings);
 
                 Console.WriteLine("Contract address stored in generalsettings.json file");
             }
@@ -332,6 +598,21 @@ namespace ContractBuilder
                 Console.WriteLine("Action failed!");
                 Console.WriteLine(e.Message);
             }
+        }
+
+        static SettingsWrapper GetCurrentSettingsFromUrl()
+        {
+            FileInfo fi = new FileInfo(System.Reflection.Assembly.GetEntryAssembly().Location);
+            var location = Path.Combine(fi.DirectoryName, "..", "..", "..");
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(location)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                .AddEnvironmentVariables();
+            var configuration = builder.Build();
+            var connString = configuration.GetConnectionString("ConnectionString");
+            var settings = GeneralSettingsReader.ReadGeneralSettings<SettingsWrapper>(connString);
+
+            return settings;
         }
 
         static SettingsWrapper GetCurrentSettings()
@@ -343,12 +624,14 @@ namespace ContractBuilder
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables();
             var configuration = builder.Build();
-            var settings = GeneralSettingsReader.ReadGeneralSettings<SettingsWrapper>(configuration.GetConnectionString("ConnectionString"));
+            var connString = configuration.GetConnectionString("ConnectionString");
+            var path = GetSettingsPath();
+            var settings = GeneralSettingsReader.ReadGeneralSettingsLocal<SettingsWrapper>(path);
 
             return settings;
         }
 
-        static void SaveSettings(BaseSettings settings)
+        static void SaveSettings(SettingsWrapper settings)
         {
             File.WriteAllText(GetSettingsPath(), JsonConvert.SerializeObject(settings, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
         }

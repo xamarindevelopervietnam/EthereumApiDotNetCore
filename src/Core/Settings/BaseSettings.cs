@@ -35,6 +35,8 @@ namespace Core.Settings
         EthereumContract NonEmissiveTokenContract { get; set; }
         EthereumContract TokenAdapterContract { get; set; }
         EthereumContract EthAdapterContract { get; set; }
+        EthereumContract DepositAdminContract { get; set; }
+        EthereumContract DepositContract { get; set; }
         Dictionary<string, EthereumContract> CoinContracts { get; set; }
         string ERC20ABI { get; set; }
         string CoinAbi { get; set; }
@@ -47,6 +49,7 @@ namespace Core.Settings
         long MaxGasPrice { get; set; }
         long MinGasPrice { get; set; }
         string EthereumSamuraiUrl { get; set; }
+        string EthereumAdapterAddress { get; set; }
     }
 
     public class BaseSettings : IBaseSettings
@@ -99,6 +102,10 @@ namespace Core.Settings
         public long MaxGasPrice { get; set; } = 50000000000;
         public long MinGasPrice { get; set; } = 30000000000;
         public string EthereumSamuraiUrl { get; set; }
+        //TODO: Fill dev settings
+        public EthereumContract DepositAdminContract { get; set; }
+        public EthereumContract DepositContract { get; set; }
+        public string EthereumAdapterAddress { get; set; }
     }
 
     public class EthereumContract

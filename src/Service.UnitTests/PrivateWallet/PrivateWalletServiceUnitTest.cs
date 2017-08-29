@@ -17,10 +17,12 @@ using Service.UnitTests.Mocks;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Signer;
 using Core.Exceptions;
+using BusinessModels.PrivateWallet;
 using System.Diagnostics;
 using Nethereum.RPC.Eth;
 using System.Numerics;
 using Nethereum.RPC.Eth.DTOs;
+using Services.Transactions;
 
 namespace Service.UnitTests.PrivateWallet
 {
@@ -31,9 +33,12 @@ namespace Service.UnitTests.PrivateWallet
         PrivateWalletService _privateWalletService;
         private MockNonceCalculator _nonceCalc;
         private Mock<IClient> _client;
+        private ISignatureChecker _signatureChecker;
         private Mock<IPaymentService> _paymentServiceMock;
         private Mock<IWeb3> _web3Mock;
         private Mock<IEthereumTransactionService> _ethereumTransactionServiceMock;
+        private RawTransactionSubmitter _rawTransactionSubmitter;
+        private ITransactionValidationService _transactionValidationService;
 
         [TestInitialize]
         public void TestInit()
@@ -43,31 +48,33 @@ namespace Service.UnitTests.PrivateWallet
             _paymentServiceMock = new Mock<IPaymentService>();
             _ethereumTransactionServiceMock = new Mock<IEthereumTransactionService>();
             _nonceCalc = (MockNonceCalculator)Config.Services.GetService<INonceCalculator>();
+            _signatureChecker = Config.Services.GetService<ISignatureChecker>();
+            
             #region SetupMockWeb3
 
             //Task<T> SendRequestAsync<T>(RpcRequest request, string route = null);
             //Task<T> SendRequestAsync<T>(string method, string route = null, params object[] paramList);
             //Task SendRequestAsync(RpcRequest request, string route = null);
             //Task SendRequestAsync(string method, string route = null, params object[] paramList);
-            _client.Setup(x => x.SendRequestAsync(It.IsAny<Nethereum.JsonRpc.Client.RpcRequest>(), It.IsAny<string>()))
-                .Returns(Task.FromResult(0));
-            _client.Setup(x => x.SendRequestAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
-                .Returns(Task.FromResult(0));
-            _client.Setup(x => x.SendRequestAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
-                .Returns(Task.FromResult<RpcResponse>(new RpcResponse(null, (JToken)null)));
-            _client.Setup(x => x.SendRequestAsync(It.IsAny<Nethereum.JsonRpc.Client.RpcRequest>(), It.IsAny<string>()))
-                .Returns(Task.FromResult<RpcResponse>(new RpcResponse(null, (JToken)null)));
+            _client.Setup(x => x.SendRequestAsync<string>(It.IsAny<Nethereum.JsonRpc.Client.RpcRequest>(), It.IsAny<string>()))
+                .Returns(Task.FromResult("")).Verifiable();
+            _client.Setup(x => x.SendRequestAsync<string>(It.IsAny<Nethereum.JsonRpc.Client.RpcRequest>(), null))
+                .Returns(Task.FromResult("")).Verifiable();
             _web3Mock.Setup(x => x.Client).Returns(_client.Object);
             _web3Mock.Setup(x => x.Eth).Returns(new Nethereum.Contracts.EthApiContractService(_client.Object));
             _paymentServiceMock.Setup(x => x.GetAddressBalancePendingInWei(TestConstants.PW_ADDRESS))
                 .Returns(Task.FromResult(new BigInteger(700000000000000)));
-
+            _rawTransactionSubmitter = new RawTransactionSubmitter(_web3Mock.Object, _signatureChecker);
+            _transactionValidationService = new TransactionValidationService(_paymentServiceMock.Object, 
+                _ethereumTransactionServiceMock.Object);
             #endregion
 
-            _privateWalletService = new PrivateWalletService(_web3Mock.Object, 
-                _nonceCalc, 
+            _privateWalletService = new PrivateWalletService(_web3Mock.Object, _nonceCalc,
+                _rawTransactionSubmitter,
                 _ethereumTransactionServiceMock.Object,
-                _paymentServiceMock.Object);
+                _paymentServiceMock.Object,
+                _signatureChecker,
+                _transactionValidationService);
         }
 
         [TestMethod]
@@ -111,7 +118,7 @@ namespace Service.UnitTests.PrivateWallet
             string transactionHash = await _privateWalletService.SubmitSignedTransaction(from, signedTransaction);
             Nethereum.Signer.Transaction transaction = new Nethereum.Signer.Transaction(signedTransaction.HexToByteArray());
 
-            _client.Verify(x => x.SendRequestAsync(It.IsAny<Nethereum.JsonRpc.Client.RpcRequest>(), It.IsAny<string>()), Times.Once);
+            _client.Verify(x => x.SendRequestAsync<string>(It.IsAny<Nethereum.JsonRpc.Client.RpcRequest>(), null), Times.Once);
             Assert.AreEqual(from, transaction.Key.GetPublicAddress());
             Assert.AreEqual(_nonceCalc._nonceStorage[from].Value, new HexBigInteger(transaction.Nonce.ToHex()));
             Assert.AreEqual(ethTransaction.GasAmount, new HexBigInteger(transaction.GasLimit.ToHex()));
@@ -150,19 +157,23 @@ namespace Service.UnitTests.PrivateWallet
         }
 
         [TestMethod]
-        public async Task PrivateWalletServiceUnitTest_NotEnoughFundsAndCommitTransaction()
+        public async Task PrivateWalletServiceUnitTest_TransactionExistsFundsAndCommitTransaction()
         {
             #region MockSetup
 
             _ethereumTransactionServiceMock = new Mock<IEthereumTransactionService>();
             _ethereumTransactionServiceMock.Setup(x => x.GetTransactionReceipt(It.IsAny<string>()))
-                .Returns(Task.FromResult(new TransactionReceipt()));
+                .Returns(Task.FromResult<TransactionReceipt>(new TransactionReceipt()));
             _ethereumTransactionServiceMock.Setup(x => x.IsTransactionInPool(It.IsAny<string>()))
                 .Returns(Task.FromResult(true));
-            _privateWalletService = new PrivateWalletService(_web3Mock.Object,
-               _nonceCalc,
-               _ethereumTransactionServiceMock.Object,
-               _paymentServiceMock.Object);
+            _transactionValidationService = new TransactionValidationService(_paymentServiceMock.Object,
+                _ethereumTransactionServiceMock.Object);
+            _privateWalletService = new PrivateWalletService(_web3Mock.Object, _nonceCalc,
+                _rawTransactionSubmitter,
+                _ethereumTransactionServiceMock.Object,
+                _paymentServiceMock.Object,
+                _signatureChecker,
+                _transactionValidationService);
 
             #endregion
 
@@ -192,17 +203,21 @@ namespace Service.UnitTests.PrivateWallet
         }
 
         [TestMethod]
-        public async Task PrivateWalletServiceUnitTestNotEnoughFundsAndCommitTransaction()
+        public async Task PrivateWalletServiceUnitTest_NotEnoughFundsAndCommitTransaction()
         {
             #region MockSetup
 
             _paymentServiceMock = new Mock<IPaymentService>();
             _paymentServiceMock.Setup(x => x.GetAddressBalancePendingInWei(TestConstants.PW_ADDRESS))
                 .Returns(Task.FromResult<BigInteger>(new BigInteger(100000000000000)));
-            _privateWalletService = new PrivateWalletService(_web3Mock.Object,
-               _nonceCalc,
-               _ethereumTransactionServiceMock.Object,
-               _paymentServiceMock.Object);
+            _transactionValidationService = new TransactionValidationService(_paymentServiceMock.Object,
+                _ethereumTransactionServiceMock.Object);
+            _privateWalletService = new PrivateWalletService(_web3Mock.Object, _nonceCalc,
+                _rawTransactionSubmitter,
+                _ethereumTransactionServiceMock.Object,
+                _paymentServiceMock.Object,
+                _signatureChecker,
+                _transactionValidationService);
 
             #endregion
 

@@ -33,7 +33,7 @@ namespace EthereumJobs.Job
             _log = log;
         }
 
-        [TimerTrigger("0.00:00:30")]
+        [TimerTrigger("0.00:01:00")]
         public async Task Execute()
         {
             try

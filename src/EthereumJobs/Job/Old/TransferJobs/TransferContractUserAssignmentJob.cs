@@ -43,7 +43,7 @@ namespace EthereumJobs.Job
 
                 if (string.IsNullOrEmpty(assignedUser) || assignedUser == Constants.EmptyEthereumAddress)
                 {
-                    await _transferContractUserAssignmentQueueService.CompleteTransfer(transaction);
+                    await _transferContractUserAssignmentQueueService.CompleteAssignment(transaction);
                 }
                 else
                 {

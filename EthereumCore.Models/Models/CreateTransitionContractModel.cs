@@ -9,8 +9,7 @@ namespace EthereumApi.Models
 {
     public class CreateTransitionContractModel
     {
-        [Required]
-        [EthereumAddress]
+        //Redundant property
         public string CoinAdapterAddress { get; set; }
 
         [Required]

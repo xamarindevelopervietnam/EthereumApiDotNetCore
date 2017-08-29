@@ -42,6 +42,7 @@ namespace Service.UnitTests.Jobs
         private Mock<IEventTraceRepository> _eventTraceRepository;
         private Mock<IUserTransferWalletRepository> _userTransferWalletRepository;
         private Mock<IEthereumTransactionService> _ethereumTransactionService;
+        private Mock<IUserDepositWalletRepository> _userDepositWalletRepository;
 
         [TestInitialize]
         public void Test()
@@ -57,6 +58,7 @@ namespace Service.UnitTests.Jobs
             _eventTraceRepository = new Mock<IEventTraceRepository>();
             _userTransferWalletRepository = new Mock<IUserTransferWalletRepository>();
             _ethereumTransactionService = new Mock<IEthereumTransactionService>();
+            _userDepositWalletRepository = new Mock<IUserDepositWalletRepository>();
         }
 
         //1.
@@ -163,6 +165,7 @@ namespace Service.UnitTests.Jobs
                 _transactionEventsService.Object,
                 _eventTraceRepository.Object,
                 _userTransferWalletRepository.Object,
+                _userDepositWalletRepository.Object,
                 _ethereumTransactionService.Object);
         }
     }

@@ -23,9 +23,11 @@ namespace EthereumApi.Controllers
         private readonly ILog _logger;
         private readonly ITransferContractService _transferContractService;
         private readonly AddressUtil _addressUtil;
+        private readonly IDepositContractService _depositContractService;
 
-        public TransitionContractsController(ITransferContractService transferContractService, ILog logger)
+        public TransitionContractsController(ITransferContractService transferContractService, ILog logger, IDepositContractService depositContractService)
         {
+            _depositContractService = depositContractService;
             _addressUtil = new AddressUtil();
             _transferContractService = transferContractService;
             _logger = logger;
@@ -43,12 +45,38 @@ namespace EthereumApi.Controllers
                 return BadRequest(ModelState);
             }
 
-            string contractAddress = await _transferContractService.CreateTransferContract(_addressUtil.ConvertToChecksumAddress(model.UserAddress),
-                model.CoinAdapterAddress);
+            string contractAddress =await _depositContractService.AssignDepositContractToUserAsync(
+                _addressUtil.ConvertToChecksumAddress(model.UserAddress));
 
             return Ok(new RegisterResponse
             {
                 Contract = contractAddress
+            });
+        }
+
+        [Route("depositContractAddress/{userAddress}")]
+        [HttpGet]
+        [ProducesResponseType(typeof(RegisterResponse), 200)]
+        [ProducesResponseType(typeof(ApiException), 400)]
+        [ProducesResponseType(typeof(void), 404)]
+        [ProducesResponseType(typeof(ApiException), 500)]
+        public async Task<IActionResult> GetAddress(string userAddress)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            IDepositContract contract = await _depositContractService.GetDepositContract(_addressUtil.ConvertToChecksumAddress(userAddress));
+
+            if (contract == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(new RegisterResponse
+            {
+                Contract = contract.ContractAddress
             });
         }
 

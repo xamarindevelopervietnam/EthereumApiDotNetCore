@@ -88,6 +88,11 @@ namespace AzureRepositories
 
             services.AddSingleton<IUserPaymentRepository>(provider => new UserPaymentRepository());
 
+            services.AddSingleton<IUserDepositWalletRepository>(provider => new UserDepositWalletRepository(
+           new AzureTableStorage<UserDepositWalletEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.UserDepositWalletTable,
+               provider.GetService<ILog>())
+               ));
+
             services.AddSingleton<IUserTransferWalletRepository>(provider => new UserTransferWalletRepository(
                new AzureTableStorage<UserTransferWalletEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.UserTransferWalletTable,
                    provider.GetService<ILog>())
@@ -105,11 +110,25 @@ namespace AzureRepositories
                 new AzureTableStorage<CoinContractFilterEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.CoinFiltersTable,
                     provider.GetService<ILog>())));
 
+            services.AddSingleton<IOwnerRepository>(provider => new OwnerRepository(
+                new AzureTableStorage<OwnerEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.OwnerTable,
+                    provider.GetService<ILog>())));
+
             services.AddSingleton<ICoinRepository>((provider => new CoinRepository(
                 new AzureTableStorage<CoinEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.CoinTable
                     , provider.GetService<ILog>())
                 , new AzureTableStorage<AzureIndex>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.CoinTableInedex
                    , provider.GetService<ILog>()))));
+
+            services.AddSingleton<IErc20ContractRepository>((provider => new Erc20ContractRepository(
+                new AzureTableStorage<Erc20ContractEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.Erc20Table
+                    , provider.GetService<ILog>()))));
+
+            services.AddSingleton<IDepositContractRepository>((provider => new DepositContractRepository(
+                new AzureTableStorage<DepositContractEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.DepositContractsTable
+                    , provider.GetService<ILog>()),
+                new AzureTableStorage<AzureIndex>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.DepositContractsTable,
+                provider.GetService<ILog>()))));
         }
 
         public static void RegisterAzureQueues(this IServiceCollection services, IBaseSettings settings, ISlackNotificationSettings slackNotificationSettings)

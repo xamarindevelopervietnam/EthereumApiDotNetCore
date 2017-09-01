@@ -52,6 +52,7 @@ namespace Services
             services.AddSingleton<IOwnerService, OwnerService>();
             services.AddSingleton<IOwnerBlockchainService, OwnerBlockchainService>();
             services.AddSingleton<IRoundRobinTransactionSender, RoundRobinTransactionSender>();
+            services.AddSingleton<ITransactionValidationService, TransactionValidationService>();
 
             #region Erc20
 

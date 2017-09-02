@@ -99,7 +99,7 @@ namespace Services.PrivateWallet
 
         public async Task<IEnumerable<AddressHistoryModel>> GetAddressHistory(AddressTransactions addressTransactions)
         {
-            var historyResponseRaw = await _ethereumSamuraiApi.ApiAddressHistoryByAddressGetAsync(addressTransactions.Address, null, null, addressTransactions.Start, addressTransactions.Count);
+            var historyResponseRaw = await _ethereumSamuraiApi.ApiAddressHistoryByAddressGetAsync(addressTransactions.Address, null, null, addressTransactions.Count, addressTransactions.Start);
             var addressHistoryResponse = historyResponseRaw as FilteredAddressHistoryResponse;
             ThrowOnError(historyResponseRaw);
             int responseCount = addressHistoryResponse.History?.Count ?? 0;

@@ -12,6 +12,9 @@ using Lykke.JobTriggers.Triggers.Bindings;
 using Services;
 using Services.Coins;
 using Services.New.Models;
+using Core.Exceptions;
+using AzureStorage.Queue;
+using Newtonsoft.Json;
 
 namespace EthereumJobs.Job
 {
@@ -24,8 +27,7 @@ namespace EthereumJobs.Job
         private readonly IPendingOperationService _pendingOperationService;
         private readonly IBaseSettings            _settings;
         private readonly ITransferContractService _transferContractService;
-
-
+        private readonly IQueueExt _coinEventResubmittQueue;
 
         public MonitoringOperationJob(
             ILog log,
@@ -34,7 +36,8 @@ namespace EthereumJobs.Job
             IExchangeContractService exchangeContractService,
             ICoinEventService coinEventService,
             ITransferContractService transferContractService,
-            IEventTraceRepository eventTraceRepository)
+            IEventTraceRepository eventTraceRepository,
+            IQueueFactory queueFactory)
         {
             _eventTraceRepository    = eventTraceRepository;
             _exchangeContractService = exchangeContractService;
@@ -43,6 +46,7 @@ namespace EthereumJobs.Job
             _log                     = log;
             _coinEventService        = coinEventService;
             _transferContractService = transferContractService;
+            _coinEventResubmittQueue = queueFactory.Build(Constants.CoinEventResubmittQueue);
         }
 
         [QueueTrigger(Constants.PendingOperationsQueue, 100, true)]
@@ -59,8 +63,14 @@ namespace EthereumJobs.Job
             try
             {
                 var operation = await _pendingOperationService.GetOperationAsync(opMessage.OperationId);
-                var guid      = Guid.Parse(operation.OperationId);
-                var amount    = BigInteger.Parse(operation.Amount);
+                if (operation == null)
+                {
+                    await _coinEventResubmittQueue.PutRawMessageAsync(JsonConvert.SerializeObject(opMessage));
+
+                    return;
+                }
+                var guid = Guid.Parse(operation.OperationId);
+                var amount = BigInteger.Parse(operation.Amount);
 
                 BigInteger resultAmount;
                 string transactionHash = null;
@@ -120,6 +130,12 @@ namespace EthereumJobs.Job
 
                     return;
                 }
+            }
+            catch (ClientSideException clientSideExc) when (clientSideExc.ExceptionType == ExceptionType.OperationWithIdAlreadyExists)
+            {
+                await _coinEventResubmittQueue.PutRawMessageAsync(JsonConvert.SerializeObject(opMessage));
+
+                return;
             }
             catch (RpcClientException exc)
             {

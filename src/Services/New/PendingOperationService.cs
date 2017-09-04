@@ -40,6 +40,7 @@ namespace Services
         //When MonitorinOperationJob is stopped
         Task RemoveFromPendingOperationQueue(string operationId);
         Task<string> TransferWithNoChecks(Guid id, string coin, string from, string to, BigInteger amount, string sign);
+        Task<IEnumerable<IOperationToHashMatch>> GetHistoricalAsync(string operationId);
     }
 
     public class PendingOperationService : IPendingOperationService
@@ -224,6 +225,7 @@ namespace Services
             IOperationToHashMatch match = await _operationToHashMatchRepository.GetAsync(operationId);
             if (match == null)
             {
+                //await _operationToHashMatchRepository.InsertOrReplaceHistoricalAsync(match);
                 return;
             }
 
@@ -270,6 +272,18 @@ namespace Services
 
             await _operationToHashMatchRepository.InsertOrReplaceAsync(match);
             await _queue.PutRawMessageAsync(JsonConvert.SerializeObject(new OperationHashMatchMessage() { OperationId = match.OperationId }));
+        }
+
+        public async Task ProcessHistoricalAsync(string operationId, Func<IEnumerable<IOperationToHashMatch>, Task> processAction)
+        {
+            await _operationToHashMatchRepository.ProcessHistoricalAsync(operationId, processAction);
+        }
+
+        public async Task<IEnumerable<IOperationToHashMatch>> GetHistoricalAsync(string operationId)
+        {
+            var matches = await _operationToHashMatchRepository.GetHistoricalForOperationAsync(operationId);
+
+            return matches;
         }
 
         private async Task ThrowOnExistingId(Guid id)

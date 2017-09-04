@@ -41,6 +41,7 @@ namespace Services
         Task RemoveFromPendingOperationQueue(string operationId);
         Task<IEnumerable<IOperationToHashMatch>> GetHistoricalAsync(string operationId);
         Task<string> TransferWithNoChecks(Guid id, string coin, string from, string to, BigInteger amount, string sign);
+        Task<IEnumerable<IOperationToHashMatch>> GetHistoricalAsync(string operationId);
     }
 
     public class PendingOperationService : IPendingOperationService

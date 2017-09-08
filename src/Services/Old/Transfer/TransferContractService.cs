@@ -129,14 +129,12 @@ namespace Services
                 throw new ClientSideException(ExceptionType.WrongParams, $"Coin with address {transferContract.CoinAdapterAddress} does not exist");
             }
 
-            string coinAbi = _settings.CoinAbi;
-
+            string coinAbi     = _settings.CoinAbi;
             var contract = _web3.Eth.GetContract(coinAbi, transferContract.CoinAdapterAddress);
             var function = contract.GetFunction("getTransferAddressUser");
             //function setTransferAddressUser(address userAddress, address transferAddress) onlyowner{
             string userAddress =
                 await function.CallAsync<string>(transferContractAddress);
-            transferContract.UserAddress = userAddress;
 
             await _transferContractRepository.SaveAsync(transferContract);
 
@@ -161,13 +159,11 @@ namespace Services
 
             string coinAbi = _settings.CoinAbi;
 
-            var contract = _web3.Eth.GetContract(coinAbi, transferContract.CoinAdapterAddress);
-            var function = contract.GetFunction("setTransferAddressUser");
+            var contract                 = _web3.Eth.GetContract(coinAbi, transferContract.CoinAdapterAddress);
+            var function                 = contract.GetFunction("setTransferAddressUser");
             //function setTransferAddressUser(address userAddress, address transferAddress) onlyowner{
-            string transaction =
-                await function.SendTransactionAsync(_settings.EthereumMainAccount, userAddress, transferContractAddress);
+            string transaction           = await function.SendTransactionAsync(_settings.EthereumMainAccount, userAddress, transferContractAddress);
             transferContract.UserAddress = userAddress;
-
             await _transferContractRepository.SaveAsync(transferContract);
 
             return transaction;

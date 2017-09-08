@@ -50,6 +50,7 @@ namespace Core.Settings
         long MinGasPrice { get; set; }
         string EthereumSamuraiUrl { get; set; }
         string EthereumAdapterAddress { get; set; }
+        string PreviousMainExchangeContractAddress { get; set; }
     }
 
     public class BaseSettings : IBaseSettings
@@ -106,6 +107,7 @@ namespace Core.Settings
         public EthereumContract DepositAdminContract { get; set; }
         public EthereumContract DepositContract { get; set; }
         public string EthereumAdapterAddress { get; set; }
+        public string PreviousMainExchangeContractAddress { get; set; }
     }
 
     public class EthereumContract

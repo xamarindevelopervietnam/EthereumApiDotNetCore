@@ -123,6 +123,9 @@ namespace AzureRepositories
                 , new AzureTableStorage<AzureIndex>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.CoinTableInedex
                    , provider.GetService<ILog>()))));
 
+            services.AddSingleton<IUserAssignmentFailRepository>(provider => new UserAssignmentFailRepository(
+                new AzureTableStorage<UserAssignmentFailEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.UserAssignmentFailTable,
+                    provider.GetService<ILog>())));
             services.AddSingleton<IErc20ContractRepository>((provider => new Erc20ContractRepository(
                 new AzureTableStorage<Erc20ContractEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.Erc20Table
                     , provider.GetService<ILog>()))));

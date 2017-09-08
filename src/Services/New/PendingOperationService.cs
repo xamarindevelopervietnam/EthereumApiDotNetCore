@@ -37,10 +37,10 @@ namespace Services
         Task RefreshOperationByIdAsync(string operationId);
         Task MatchHashToOpId(string transactionHash, string operationId);
         Task<string> CreateOperation(IPendingOperation operation);
+        Task<IEnumerable<IOperationToHashMatch>> GetHistoricalAsync(string operationId);
         //When MonitorinOperationJob is stopped
         Task RemoveFromPendingOperationQueue(string operationId);
         Task<string> TransferWithNoChecks(Guid id, string coin, string from, string to, BigInteger amount, string sign);
-        Task<IEnumerable<IOperationToHashMatch>> GetHistoricalAsync(string operationId);
     }
 
     public class PendingOperationService : IPendingOperationService
@@ -287,6 +287,12 @@ namespace Services
         }
 
         private async Task ThrowOnExistingId(Guid id)
+        {
+            await CheckThaIdIsUniqueAsync(_settings.MainExchangeContract.Address, id);
+            await CheckThaIdIsUniqueAsync(_settings.PreviousMainExchangeContractAddress, id);
+        }
+
+        private async Task CheckThaIdIsUniqueAsync(string contractAddress, Guid id)
         {
             var contract = _web3.Eth.GetContract(_settings.MainExchangeContract.Abi, _settings.MainExchangeContract.Address);
             var transactionsCheck = contract.GetFunction("transactions");

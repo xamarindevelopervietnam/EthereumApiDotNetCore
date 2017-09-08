@@ -34,6 +34,7 @@ namespace EthereumJobs.Config
         {
             #region CoreJobs
 
+
             collection.AddSingleton<MonitoringJob>();
             collection.AddSingleton<PingContractsJob>();
             collection.AddSingleton<MonitoringCoinTransactionJob>();
@@ -63,7 +64,6 @@ namespace EthereumJobs.Config
             collection.AddSingleton<TransferTransactionQueueJob>();
 
             #endregion
-
         }
     }
 }

@@ -288,6 +288,12 @@ namespace Services
 
         private async Task ThrowOnExistingId(Guid id)
         {
+            await CheckThaIdIsUniqueAsync(_settings.MainExchangeContract.Address, id);
+            await CheckThaIdIsUniqueAsync(_settings.PreviousMainExchangeContractAddress, id);
+        }
+
+        private async Task CheckThaIdIsUniqueAsync(string contractAddress, Guid id)
+        {
             var contract = _web3.Eth.GetContract(_settings.MainExchangeContract.Abi, _settings.MainExchangeContract.Address);
             var transactionsCheck = contract.GetFunction("transactions");
             var bigIntRepresentation = EthUtils.GuidToBigInteger(id);

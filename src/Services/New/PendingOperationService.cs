@@ -37,6 +37,7 @@ namespace Services
         Task RefreshOperationByIdAsync(string operationId);
         Task MatchHashToOpId(string transactionHash, string operationId);
         Task<string> CreateOperation(IPendingOperation operation);
+        Task<IEnumerable<IOperationToHashMatch>> GetHistoricalAsync(string operationId);
         //When MonitorinOperationJob is stopped
         Task RemoveFromPendingOperationQueue(string operationId);
         Task<string> TransferWithNoChecks(Guid id, string coin, string from, string to, BigInteger amount, string sign);

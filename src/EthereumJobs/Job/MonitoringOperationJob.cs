@@ -15,6 +15,10 @@ using Services.New.Models;
 using Core.Exceptions;
 using AzureStorage.Queue;
 using Newtonsoft.Json;
+using Core.Exceptions;
+using AzureStorage.Queue;
+using Newtonsoft.Json;
+using EdjCase.JsonRpc.Client;
 
 namespace EthereumJobs.Job
 {
@@ -28,6 +32,7 @@ namespace EthereumJobs.Job
         private readonly IBaseSettings            _settings;
         private readonly ITransferContractService _transferContractService;
         private readonly IQueueExt _coinEventResubmittQueue;
+        private readonly IQueueExt _coinEventResubmittQueue;
 
         public MonitoringOperationJob(
             ILog log,
@@ -35,7 +40,7 @@ namespace EthereumJobs.Job
             IPendingOperationService pendingOperationService,
             IExchangeContractService exchangeContractService,
             ICoinEventService coinEventService,
-            ITransferContractService transferContractService,
+            ITransferContractService transferContractService, 
             IEventTraceRepository eventTraceRepository,
             IQueueFactory queueFactory)
         {

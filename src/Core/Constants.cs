@@ -24,6 +24,7 @@ namespace Core
         public const string ContractDepositQueue = "ethereum-contract-deposit-queue";
         public const string ContractDepositCashinQueue = "ethereum-contract-deposi-queue";
         public const string CoinEventResubmittQueue = "ethereum-coin-event-resubmitt-queue";
+
         /// <summary>
         /// Used to internal monitoring of refill transactions
         /// </summary>
@@ -91,6 +92,8 @@ namespace Core
         public const string CashInEventTable = "CashInEvent";
         public const string PendingOperationsQueue = "pending-operations";
         public const string NonceCacheTable = "NonceCache";
+        public const string UserAssignmentFailTable = "UserAssignmentFail";
+        
         public const string OwnerTable = "Owner";
         public static string OwnerRepository;
         public static BigInteger DefaultTransactionGas = 21000;

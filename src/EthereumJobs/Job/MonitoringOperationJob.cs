@@ -32,7 +32,6 @@ namespace EthereumJobs.Job
         private readonly IBaseSettings            _settings;
         private readonly ITransferContractService _transferContractService;
         private readonly IQueueExt _coinEventResubmittQueue;
-        private readonly IQueueExt _coinEventResubmittQueue;
 
         public MonitoringOperationJob(
             ILog log,

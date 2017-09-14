@@ -130,6 +130,10 @@ namespace AzureRepositories
                 new AzureTableStorage<Erc20ContractEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.Erc20Table
                     , provider.GetService<ILog>()))));
 
+
+            services.AddSingleton<IOperationResubmittRepository>(provider => new OperationResubmittRepository(
+               new AzureTableStorage<OperationResubmittEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.OperationResubmittTable,
+                   provider.GetService<ILog>())));
             services.AddSingleton<IDepositContractRepository>((provider => new DepositContractRepository(
                 new AzureTableStorage<DepositContractEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.DepositContractsTable
                     , provider.GetService<ILog>()),

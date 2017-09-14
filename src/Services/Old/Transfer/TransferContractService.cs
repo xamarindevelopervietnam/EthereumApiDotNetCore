@@ -130,11 +130,9 @@ namespace Services
             }
 
             string coinAbi     = _settings.CoinAbi;
-            var contract = _web3.Eth.GetContract(coinAbi, transferContract.CoinAdapterAddress);
-            var function = contract.GetFunction("getTransferAddressUser");
-            //function setTransferAddressUser(address userAddress, address transferAddress) onlyowner{
-            string userAddress =
-                await function.CallAsync<string>(transferContractAddress);
+            Contract contract  = _web3.Eth.GetContract(coinAbi, transferContract.CoinAdapterAddress);
+            Function function  = contract.GetFunction("getTransferAddressUser");
+            string userAddress = await function.CallAsync<string>(transferContractAddress);
 
             await _transferContractRepository.SaveAsync(transferContract);
 

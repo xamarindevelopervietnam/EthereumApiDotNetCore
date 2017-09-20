@@ -10,7 +10,8 @@ namespace Core
         /// </summary>
         public static string StoragePrefix { get; set; } = "";
 
-        public const string EmptyEthereumAddress = "0x0000000000000000000000000000000000000000";
+        public const string AddressForRoundRobinTransactionSending = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+        public const string EmptyEthereumAddress =                   "0x0000000000000000000000000000000000000000";
         public const string EventTraceTable = "EventTrace";
         public const string TransferContractUserAssignmentQueueName = "transfer-contract-user-assignment";
         public const string SlackNotifierQueue = "slack-notifications";
@@ -87,6 +88,8 @@ namespace Core
         public const string UserAssignmentFailTable = "UserAssignmentFail";
         public const string OperationResubmittTable = "OperationResubmitt";
 
+        public const string OwnerTable = "Owner";
+        public static string OwnerRepository;
         public static BigInteger DefaultTransactionGas = 21000;
     }
 

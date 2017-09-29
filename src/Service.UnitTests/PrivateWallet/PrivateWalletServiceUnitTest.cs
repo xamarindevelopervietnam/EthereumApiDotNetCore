@@ -72,7 +72,8 @@ namespace Service.UnitTests.PrivateWallet
                 _ethereumTransactionServiceMock.Object,
                 _paymentServiceMock.Object,
                 _signatureChecker,
-                _transactionValidationService);
+                _transactionValidationService,
+                null);
         }
 
         [TestMethod]
@@ -169,7 +170,8 @@ namespace Service.UnitTests.PrivateWallet
                 _ethereumTransactionServiceMock.Object,
                 _paymentServiceMock.Object,
                 _signatureChecker,
-                _transactionValidationService);
+                _transactionValidationService,
+                null);
 
             #endregion
 
@@ -211,7 +213,8 @@ namespace Service.UnitTests.PrivateWallet
                 _ethereumTransactionServiceMock.Object,
                 _paymentServiceMock.Object,
                 _signatureChecker,
-                _transactionValidationService);
+                _transactionValidationService,
+                null);
 
             #endregion
 

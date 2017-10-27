@@ -38,7 +38,6 @@ namespace EthereumApi.Controllers
             {
                 return BadRequest(ModelState);
             }
-                
 
             var asset = new Coin
             {

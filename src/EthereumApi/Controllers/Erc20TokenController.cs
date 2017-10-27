@@ -54,7 +54,7 @@ namespace EthereumApi.Controllers
         [Route("create")]
         [HttpPost]
         [ProducesResponseType(typeof(void), 200)]
-        public async Task<IActionResult> CreateCoinAdapter([FromBody]CreateErc20TokenModel model)
+        public async Task<IActionResult> AddTokenToSuppot([FromBody]CreateErc20TokenModel model)
         {
             if (!ModelState.IsValid)
             {

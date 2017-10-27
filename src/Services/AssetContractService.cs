@@ -1,4 +1,5 @@
-﻿using Core.Exceptions;
+﻿using Core;
+using Core.Exceptions;
 using Core.Repositories;
 using Core.Settings;
 using Nethereum.Web3;
@@ -7,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
+using AzureStorage.Queue;
 
 namespace Services
 {
@@ -26,6 +28,7 @@ namespace Services
         private readonly IErcInterfaceService _ercInterfaceService;
         private readonly IBaseSettings _settings;
         private readonly Web3 _web3;
+        private readonly IQueueExt _coinAdapterCreateQueue;
         private readonly ITransferContractService _transferContractService;
 
         public AssetContractService(IBaseSettings settings,
@@ -34,7 +37,8 @@ namespace Services
             IEthereumContractRepository ethereumContractRepository,
             IErcInterfaceService ercInterfaceService, 
             Web3 web3, 
-            ITransferContractService transferContractService)
+            ITransferContractService transferContractService,
+            IQueueFactory queueFactory)
         {
             _transferContractService = transferContractService;
             _settings = settings;
@@ -42,6 +46,7 @@ namespace Services
             _coinRepository = coinRepository;
             _ercInterfaceService = ercInterfaceService;
             _web3 = web3;
+            _coinAdapterCreateQueue = queueFactory.Build(Constants.CoinAdapterCreateQueue);
         }
 
         public Task<IEnumerable<ICoin>> GetAll()

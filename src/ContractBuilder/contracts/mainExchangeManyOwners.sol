@@ -147,10 +147,6 @@ contract MainExchangeMultipleOwners is ManyOwnersBaseContract{
         return true;
     }
 
-    function isOwner(address ownerAddress) constant returns (bool isOwner){
-        return _owners[ownerAddress];
-    }
-
     function ping() onlyowner {
         _lastPing = now;
     }

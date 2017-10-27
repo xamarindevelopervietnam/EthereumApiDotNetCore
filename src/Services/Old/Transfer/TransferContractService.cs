@@ -134,6 +134,8 @@ namespace Services
             Function function  = contract.GetFunction("getTransferAddressUser");
             string userAddress = await function.CallAsync<string>(transferContractAddress);
 
+            await _transferContractRepository.SaveAsync(transferContract);
+
             return userAddress;
         }
 

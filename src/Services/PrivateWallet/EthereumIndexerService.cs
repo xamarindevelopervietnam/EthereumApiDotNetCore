@@ -125,7 +125,7 @@ namespace Services.PrivateWallet
 
         public async Task<IEnumerable<TransactionContentModel>> GetTransactionHistory(AddressTransaction addressTransactions)
         {
-            var transactionResponseRaw = await _ethereumSamuraiApi.ApiTransactionByAddressGetAsync(addressTransactions.Address, addressTransactions.Start, addressTransactions.Count);
+            var transactionResponseRaw = await _ethereumSamuraiApi.ApiTransactionByAddressGetAsync(addressTransactions.Address, addressTransactions.Count, addressTransactions.Start);
             var transactionResponse = transactionResponseRaw as FilteredTransactionsResponse;
             ThrowOnError(transactionResponseRaw);
             int responseCount = transactionResponse.Transactions?.Count ?? 0;
@@ -144,7 +144,7 @@ namespace Services.PrivateWallet
 
         public async Task<IEnumerable<AddressHistoryModel>> GetAddressHistory(AddressTransaction addressTransactions)
         {
-            var historyResponseRaw = await _ethereumSamuraiApi.ApiAddressHistoryByAddressGetAsync(addressTransactions.Address, null, null, addressTransactions.Start, addressTransactions.Count);
+            var historyResponseRaw = await _ethereumSamuraiApi.ApiAddressHistoryByAddressGetAsync(addressTransactions.Address, null, null, addressTransactions.Count, addressTransactions.Start);
             var addressHistoryResponse = historyResponseRaw as FilteredAddressHistoryResponse;
             ThrowOnError(historyResponseRaw);
             int responseCount = addressHistoryResponse.History?.Count ?? 0;

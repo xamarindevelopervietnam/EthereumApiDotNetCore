@@ -87,11 +87,14 @@ namespace LkeServices.Signature
         public async Task<string> SendTransactionAsync<T>(T transaction) where T : TransactionInput
         {
             var value = (transaction?.Value ?? new BigInteger(0));
+            var gasPrice = transaction.GasPrice != null ? transaction.GasPrice.Value : 0;
+            var gas = transaction.Gas != null ? transaction.Gas.Value : 0 ;
+
             return await SendTransactionASync(transaction.From, transaction.To,
                 transaction.Data,
                 value,
-                transaction.GasPrice,
-                transaction.Gas);
+                gasPrice,
+                gas);
         }
 
         public async Task<string> SendTransactionAsync(string from, string to, HexBigInteger amount)

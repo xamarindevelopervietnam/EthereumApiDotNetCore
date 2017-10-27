@@ -84,11 +84,11 @@ namespace ContractBuilder
             //});
 
             //var service = ServiceProvider.GetService<IErcInterfaceService>();
-            //service.Transfer("0xce2ef46ecc168226f33b6f6b8a56e90450d0d2c0", settings.EthereumMainAccount,
-            //    "0x6e95184c02c39369ee9449f85aee42badc6910fd", new System.Numerics.BigInteger(101)).Wait();
+            //service.Transfer("0xce2ef46ecc168226f33b6f6b8a56e90450d0d2c0", settings.EthereumCore.EthereumMainAccount,
+            //    "0xf87bbc410e051f32de3fcb0791a5e22c59eaf4d1", new System.Numerics.BigInteger(101)).Wait();
             //var paymentService = ServiceProvider.GetService<IPaymentService>();
-            //    string result = paymentService.SendEthereum(settings.EthereumMainAccount, 
-            //    "0xbb0a9c08030898cdaf1f28633f0d3c8556155482", new System.Numerics.BigInteger(5000000000000000)).Result;
+            //    string result = paymentService.SendEthereum(settings.EthereumCore.EthereumMainAccount,
+            //    "0xf87bbc410e051f32de3fcb0791a5e22c59eaf4d1", new System.Numerics.BigInteger(5000000000000000)).Result;
             //var coinEv = ServiceProvider.GetService<ICoinEventService>();
             //var ev1 = coinEv.GetCoinEvent("0xbfb8d6a561c1a088c347efb989e19cb02c1028b34a337e001b146fd1360dc714").Result;
             //var ev2 = coinEv.GetCoinEvent("0xa0876a676d695ab145fcf70ac0b2ae02e8b00351a5193352ffb37ad37dce6848").Result;
@@ -115,6 +115,7 @@ namespace ContractBuilder
                 Console.WriteLine("7. Add more owners to Main Exchange Contract with multiple owners!(Add addresses with some eth on it)");
                 Console.WriteLine("9. Deploy And Migrate To NM!(Make sure that jobs are stopped)");
                 Console.WriteLine("10. Send transaction to MainExchange!(Make sure that jobs are stopped)");
+                Console.WriteLine("11. Deploy deposit admin contract");
                 Console.WriteLine("0. Exit");
 
                 var input = Console.ReadLine();
@@ -150,6 +151,9 @@ namespace ContractBuilder
                         break;
                     case "10":
                         SendTransactionFromMainExchange().Wait();
+                        break;
+                    case "11":
+                        DeployDepositAdminContract().Wait();
                         break;
                     default:
                         Console.WriteLine("Bad input!");
@@ -336,6 +340,34 @@ namespace ContractBuilder
             {
                 Console.WriteLine("Action failed!");
                 Console.WriteLine(e.Message);
+            }
+        }
+
+        static async Task<string> DeployDepositAdminContract()
+        {
+            Console.WriteLine("Begin DeployDepositAdminContract process");
+            try
+            {
+                var settings = GetCurrentSettings();
+                var abi = GetFileContent("DepositAdminContract.abi");
+                var bytecode = GetFileContent("DepositAdminContract.bin");
+                string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode);
+                IBaseSettings baseSettings = ServiceProvider.GetService<IBaseSettings>();
+                
+                Console.WriteLine("New deposit admin contract address: " + contractAddress);
+
+                SaveSettings(settings);
+
+                Console.WriteLine("Contract address stored in generalsettings.json file");
+
+                return contractAddress;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Action failed!");
+                Console.WriteLine(e.Message);
+
+                return "";
             }
         }
 

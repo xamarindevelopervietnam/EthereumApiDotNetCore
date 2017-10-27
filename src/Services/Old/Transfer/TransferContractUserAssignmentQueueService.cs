@@ -26,7 +26,7 @@ namespace Services
     public interface ITransferContractUserAssignmentQueueService
     {
         Task PushContract(TransferContractUserAssignment assignment);
-        Task CompleteTransfer(TransferContractUserAssignment assignment);
+        Task CompleteAssignment(TransferContractUserAssignment assignment);
     }
 
     public class TransferContractUserAssignmentQueueService : ITransferContractUserAssignmentQueueService
@@ -62,7 +62,7 @@ namespace Services
             return await _queue.Count() ?? 0;
         }
 
-        public async Task CompleteTransfer(TransferContractUserAssignment assignment)
+        public async Task CompleteAssignment(TransferContractUserAssignment assignment)
         {
             ICoin coinAdapter = await _coinRepository.GetCoinByAddress(assignment.CoinAdapterAddress);
             if (coinAdapter == null)

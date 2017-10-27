@@ -6,6 +6,7 @@ using EthereumJobs.Job;
 using Lykke.JobTriggers.Abstractions;
 using AzureRepositories.Notifiers;
 using Common.Log;
+using EthereumJobs.Job.DepositJobs;
 using RabbitMQ;
 
 namespace EthereumJobs.Config
@@ -31,21 +32,37 @@ namespace EthereumJobs.Config
 
         public static void RegisterJobs(IServiceCollection collection)
         {
-            #region NewJobs
+            #region CoreJobs
+
 
             collection.AddSingleton<MonitoringJob>();
-            collection.AddSingleton<MonitoringCoinTransactionJob>();
-            collection.AddSingleton<MonitoringTransferContracts>();
-            collection.AddSingleton<MonitoringTransferTransactions>();
-            collection.AddSingleton<TransferContractPoolJob>();
-            collection.AddSingleton<TransferContractUserAssignmentJob>();
-            collection.AddSingleton<PoolRenewJob>();
             collection.AddSingleton<PingContractsJob>();
-            collection.AddSingleton<TransferTransactionQueueJob>();
+            collection.AddSingleton<MonitoringCoinTransactionJob>();
             collection.AddSingleton<MonitoringOperationJob>();
             collection.AddSingleton<CashinIndexingJob>();
+            collection.AddSingleton<OwnersBalanceCheckJob>();
             collection.AddSingleton<CoinEventResubmittJob>();
-            
+
+            #endregion
+
+            #region DepositJobs
+
+            collection.AddSingleton<DepositContractPoolJob>();
+            collection.AddSingleton<DepositContractUserAssignmentJob>();
+            collection.AddSingleton<DepositPoolRenewJob>();
+            collection.AddSingleton<MonitoringDepositContractsJob>();
+            collection.AddSingleton<MonitoringDepositTransactionsJob>();
+
+            #endregion
+
+            #region TransferJobs
+
+            collection.AddSingleton<MonitoringTransferContracts>();
+            collection.AddSingleton<MonitoringTransferTransactions>();
+            collection.AddSingleton<TransferContractUserAssignmentJob>();
+            collection.AddSingleton<PoolRenewJob>();
+            collection.AddSingleton<TransferTransactionQueueJob>();
+
             #endregion
         }
     }

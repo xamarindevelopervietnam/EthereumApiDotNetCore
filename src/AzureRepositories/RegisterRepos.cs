@@ -121,6 +121,8 @@ namespace AzureRepositories
                 new AzureTableStorage<CoinEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.CoinTable
                     , provider.GetService<ILog>())
                 , new AzureTableStorage<AzureIndex>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.CoinTableInedex
+                   , provider.GetService<ILog>()),
+                new AzureTableStorage<AzureIndex>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.CoinTableExternalAddressIndex
                    , provider.GetService<ILog>()))));
 
             services.AddSingleton<IUserAssignmentFailRepository>(provider => new UserAssignmentFailRepository(

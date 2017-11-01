@@ -52,6 +52,7 @@ namespace EthereumJobs.Config
             collection.AddSingleton<CashinIndexingJob>();
             collection.AddSingleton<OwnersBalanceCheckJob>();
             collection.AddSingleton<CoinEventResubmittJob>();
+            collection.AddSingleton<CoinAdapterCreationJob>();
 
             collection.AddSingleton<CoinEventResubmittJob>();
             

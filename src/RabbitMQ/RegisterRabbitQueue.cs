@@ -1,5 +1,6 @@
 ﻿using Common;
 using Common.Log;
+using Core.Messages;
 using Core.Settings;
 using Lykke.RabbitMqBroker.Publisher;
 using Lykke.RabbitMqBroker.Subscriber;
@@ -26,7 +27,14 @@ namespace RabbitMQ
                 .SetLogger(logger)
                 .Start();
 
+            RabbitMqPublisher<CoinAdapterCreationMessage> coinAdapterCreationPublisher = new RabbitMqPublisher<CoinAdapterCreationMessage>(rabbitMqSettings)
+               .SetSerializer(new BytesSerializer<CoinAdapterCreationMessage>())
+               .SetPublishStrategy(new PublishStrategy("created", "lykke.ethereum.core.adapters"))
+               .SetLogger(logger)
+               .Start();
+
             services.AddSingleton<IMessageProducer<string>>(publisher);
+            services.AddSingleton<IMessageProducer<CoinAdapterCreationMessage>>(coinAdapterCreationPublisher);
             services.AddSingleton<IRabbitQueuePublisher, RabbitQueuePublisher>();
         }
     }
@@ -34,20 +42,22 @@ namespace RabbitMQ
     internal class PublishStrategy : IRabbitMqPublishStrategy
     {
         private readonly string _queue;
+        private readonly string _exchangeName;
 
-        public PublishStrategy(string queue)
+        public PublishStrategy(string queue, string exchangeName = null)
         {
-            _queue = queue;
+            _queue        = queue;
+            _exchangeName = exchangeName;
         }
 
         public void Configure(RabbitMqPublisherSettings settings, IModel channel)
         {
-            channel.ExchangeDeclare(exchange: settings.ExchangeName, type: ExchangeType.Fanout, durable: true);
+            channel.ExchangeDeclare(exchange: _exchangeName ?? settings.ExchangeName, type: ExchangeType.Fanout, durable: true);
         }
 
         public void Publish(RabbitMqPublisherSettings settings, IModel channel, byte[] body)
         {
-            channel.BasicPublish(exchange: settings.ExchangeName,
+            channel.BasicPublish(exchange: _exchangeName ?? settings.ExchangeName,
                       routingKey: _queue,//remove
                       basicProperties: null,
                       body: body);

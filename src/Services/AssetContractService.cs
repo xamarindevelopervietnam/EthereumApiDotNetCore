@@ -9,16 +9,18 @@ using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using AzureStorage.Queue;
+using Core.Messages;
 
 namespace Services
 {
     public interface IAssetContractService
     {
         Task<IEnumerable<ICoin>> GetAll();
-        Task<string> CreateCoinContract(ICoin coin);
+        Task EnqueueCoinContractCreationAsync(ICoin coin);
         Task<ICoin> GetById(string id);
         Task<ICoin> GetByAddress(string adapterAddress);
         Task<BigInteger> GetBalance(string coinAdapterAddress, string userAddress);
+        Task<string> CreateCoinAdapterAsync(ICoin coin);
     }
 
         public class AssetContractService: IAssetContractService
@@ -54,11 +56,11 @@ namespace Services
             return _coinRepository.GetAll();
         }
 
-        public async Task<string> CreateCoinContract(ICoin coin)
+        public async Task<string> CreateCoinAdapterAsync(ICoin coin)
         {
             if (coin == null)
             {
-                throw new ClientSideException(ExceptionType.MissingRequiredParams,"Coin should not be null");
+                throw new ClientSideException(ExceptionType.MissingRequiredParams, "Coin should not be null");
             }
 
             string abi;
@@ -92,6 +94,17 @@ namespace Services
             await _coinRepository.InsertOrReplace(coin);
 
             return coin.AdapterAddress;
+        }
+
+        public async Task EnqueueCoinContractCreationAsync(ICoin coin)
+        {
+            if (coin == null)
+            {
+                throw new ClientSideException(ExceptionType.MissingRequiredParams,"Coin should not be null");
+            }
+
+            var message = CoinAdapterCreationMessage.CreateFromCoin(coin);
+            await _coinAdapterCreateQueue.PutRawMessageAsync(Newtonsoft.Json.JsonConvert.SerializeObject(message));
         }
 
         public async Task<ICoin> GetById(string id)

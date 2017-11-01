@@ -31,7 +31,7 @@ namespace EthereumApi.Controllers
 
         [Route("create")]
         [HttpPost]
-        [ProducesResponseType(typeof(RegisterResponse), 200)]
+        [ProducesResponseType(typeof(EventResponse), 200)]
         public async Task<IActionResult> CreateCoinAdapter([FromBody] CreateAssetModel model)
         {
             if (!ModelState.IsValid)
@@ -39,22 +39,23 @@ namespace EthereumApi.Controllers
                 return BadRequest(ModelState);
             }
 
+            var id = Guid.NewGuid();
             var asset = new Coin
             {
                 ExternalTokenAddress     = model.ExternalTokenAddress,
                 ContainsEth              = model.ContainsEth,
                 Blockchain               = model.Blockchain,
                 BlockchainDepositEnabled = true,
-                Id                       = Guid.NewGuid().ToString(),
+                Id                       = id.ToString(),
                 Multiplier               = model.Multiplier,
                 Name                     = model.Name
             };
 
-            var contractAddress = await _assetContractService.CreateCoinContract(asset);
+            await _assetContractService.EnqueueCoinContractCreationAsync(asset);
 
-            return Ok(new RegisterResponse
+            return Ok(new EventResponse
             {
-                Contract = contractAddress
+                EventId = id
             });
         }
 

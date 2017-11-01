@@ -10,20 +10,20 @@ namespace AzureRepositories.Repositories
     public class CoinRepository : ICoinRepository
     {
         private const string AddressIndexName = "AddressIndex";
-
-
+        private const string TokenIndexName = "TokenIndex";
 
         private readonly INoSQLTableStorage<AzureIndex> _addressIndex;
+        private readonly INoSQLTableStorage<AzureIndex> _tokenIndex;
         private readonly INoSQLTableStorage<CoinEntity> _table;
-
-        
 
         public CoinRepository(
             INoSQLTableStorage<CoinEntity> table,
-            INoSQLTableStorage<AzureIndex> addressIndex)
+            INoSQLTableStorage<AzureIndex> addressIndex,
+            INoSQLTableStorage<AzureIndex> tokenIndex)
         {
             _addressIndex = addressIndex;
             _table        = table;
+            _tokenIndex   = tokenIndex;
         }
 
         public async Task<IEnumerable<ICoin>> GetAll()
@@ -63,9 +63,22 @@ namespace AzureRepositories.Repositories
         {
             var entity = CoinEntity.CreateCoinEntity(coin);
             var index  = AzureIndex.Create(AddressIndexName, coin.AdapterAddress, entity);
+            var tokenIndex = AzureIndex.Create(AddressIndexName, coin.ExternalTokenAddress?.ToLower(), entity);
+
+            var existingIndex = await _tokenIndex.GetDataAsync(tokenIndex);
+
+            if (existingIndex != null)
+            {
+                throw new Exception("Adapter for such token has been already created!");
+            }
 
             await _table.InsertOrReplaceAsync(entity);
             await _addressIndex.InsertAsync(index);
+
+            if (tokenIndex != null)
+            {
+                await _tokenIndex.InsertOrReplaceAsync(tokenIndex);
+            }
         }
 
         public async Task ProcessAllAsync(Func<IEnumerable<ICoin>, Task> processAction)

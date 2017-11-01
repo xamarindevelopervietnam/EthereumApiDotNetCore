@@ -41,6 +41,7 @@ namespace Services
             services.AddTransient<ISlackNotifier, SlackNotifier>();
             services.AddTransient<ICoinEventPublisher, CoinEventPublisherService>();
             services.AddTransient<ICoinEventService, CoinEventService>();
+            services.AddSingleton<IAssetContractService, AssetContractService>();
             services.AddSingleton<IHashCalculator, HashCalculator>();
             services.AddSingleton<IPendingOperationService, PendingOperationService>();
             services.AddSingleton<ITransactionEventsService, TransactionEventsService>();

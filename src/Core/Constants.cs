@@ -64,6 +64,7 @@ namespace Core
         public const string Erc20Table = "Erc20";
         public const string DepositContractsTable = "DepositContracts";
         public const string CoinTableInedex = "CoinTableIndex";
+        public const string CoinTableExternalAddressIndex = "CoinTableExternalAddressIndex";
 
         public const int GasForUserContractTransafer = 50000;
         public const int GasForCoinTransaction = 200000;

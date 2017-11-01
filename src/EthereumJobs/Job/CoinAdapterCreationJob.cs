@@ -7,6 +7,7 @@ using Core.Settings;
 using Services;
 using Core.Messages;
 using RabbitMQ;
+using Lykke.Job.EthereumCore.Contracts.Events;
 
 namespace EthereumJobs.Job
 {
@@ -35,8 +36,19 @@ namespace EthereumJobs.Job
             {
                 string adapterAddress = await _assetContractService.CreateCoinAdapterAsync(coinAdapterCreationMessage);
                 coinAdapterCreationMessage.AdapterAddress = adapterAddress;
+                CoinAdapterCreationEvent creationEvent = new CoinAdapterCreationEvent(
+                    coinAdapterCreationMessage.AdapterAddress,
+                    coinAdapterCreationMessage.Blockchain,
+                    coinAdapterCreationMessage.BlockchainDepositEnabled,
+                    coinAdapterCreationMessage.ContainsEth,
+                    coinAdapterCreationMessage.DeployedTransactionHash,
+                    coinAdapterCreationMessage.ExternalTokenAddress,
+                    coinAdapterCreationMessage.Id,
+                    coinAdapterCreationMessage.Multiplier,
+                    coinAdapterCreationMessage.Name
+                    );
 
-                await _rabbitQueuePublisher.PublshEvent<CoinAdapterCreationMessage>(coinAdapterCreationMessage);
+                await _rabbitQueuePublisher.PublshEvent<CoinAdapterCreationEvent>(creationEvent);
             }
             catch (Exception ex)
             {

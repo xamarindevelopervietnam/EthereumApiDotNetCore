@@ -2,6 +2,7 @@
 using Common.Log;
 using Core.Messages;
 using Core.Settings;
+using Lykke.Job.EthereumCore.Contracts.Events;
 using Lykke.RabbitMqBroker.Publisher;
 using Lykke.RabbitMqBroker.Subscriber;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,14 +28,14 @@ namespace RabbitMQ
                 .SetLogger(logger)
                 .Start();
 
-            RabbitMqPublisher<CoinAdapterCreationMessage> coinAdapterCreationPublisher = new RabbitMqPublisher<CoinAdapterCreationMessage>(rabbitMqSettings)
-               .SetSerializer(new BytesSerializer<CoinAdapterCreationMessage>())
+            RabbitMqPublisher<CoinAdapterCreationEvent> coinAdapterCreationPublisher = new RabbitMqPublisher<CoinAdapterCreationEvent>(rabbitMqSettings)
+               .SetSerializer(new BytesSerializer<CoinAdapterCreationEvent>())
                .SetPublishStrategy(new PublishStrategy("created", "lykke.ethereum.core.adapters"))
                .SetLogger(logger)
                .Start();
 
             services.AddSingleton<IMessageProducer<string>>(publisher);
-            services.AddSingleton<IMessageProducer<CoinAdapterCreationMessage>>(coinAdapterCreationPublisher);
+            services.AddSingleton<IMessageProducer<CoinAdapterCreationEvent>>(coinAdapterCreationPublisher);
             services.AddSingleton<IRabbitQueuePublisher, RabbitQueuePublisher>();
         }
     }

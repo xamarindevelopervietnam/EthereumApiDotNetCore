@@ -1,5 +1,6 @@
 ﻿using Common;
 using Core.Messages;
+using Lykke.Job.EthereumCore.Contracts.Events;
 using Lykke.RabbitMqBroker.Publisher;
 using System;
 using System.Collections.Generic;
@@ -19,12 +20,12 @@ namespace RabbitMQ
     public class RabbitQueuePublisher : IRabbitQueuePublisher
     {
         private IMessageProducer<string> _publisher;
-        private readonly IMessageProducer<CoinAdapterCreationMessage> _coinCreationPublisher;
+        private readonly IMessageProducer<CoinAdapterCreationEvent> _coinCreationPublisher;
         private readonly Dictionary<Type, MessageProducerWrapper> _messageProducerDictionary =
             new Dictionary<Type, MessageProducerWrapper>();
 
         public RabbitQueuePublisher(IMessageProducer<string> publisher,
-            IMessageProducer<CoinAdapterCreationMessage> coinCreationPublisher)
+            IMessageProducer<CoinAdapterCreationEvent> coinCreationPublisher)
         {
             _publisher = publisher;
             _coinCreationPublisher = coinCreationPublisher;
@@ -38,8 +39,8 @@ namespace RabbitMQ
 
             #region CoinAdapterCreationMessage
 
-            MessageProducerWrapper CoinAdapterCreationMessageWrapper = CreateWrapper(typeof(CoinAdapterCreationMessage), _coinCreationPublisher);
-            _messageProducerDictionary.Add(typeof(CoinAdapterCreationMessage), CoinAdapterCreationMessageWrapper);
+            MessageProducerWrapper CoinAdapterCreationMessageWrapper = CreateWrapper(typeof(CoinAdapterCreationEvent), _coinCreationPublisher);
+            _messageProducerDictionary.Add(typeof(CoinAdapterCreationEvent), CoinAdapterCreationMessageWrapper);
 
             #endregion
         }

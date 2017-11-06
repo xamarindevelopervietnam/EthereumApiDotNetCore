@@ -155,9 +155,6 @@ namespace ContractBuilder
                     case "9":
                         DeployAndMigrateToNM().Wait();
                         break;
-                    case "9":
-                        DeployAndMigrateToNM().Wait();
-                        break;
                     case "10":
                         SendTransactionFromMainExchange().Wait();
                         break;

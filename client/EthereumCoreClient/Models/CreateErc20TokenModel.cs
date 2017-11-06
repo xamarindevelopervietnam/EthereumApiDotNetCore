@@ -10,23 +10,23 @@ namespace Lykke.Service.EthereumCore.Client.Models
     using Newtonsoft.Json;
     using System.Linq;
 
-    public partial class CheckPendingModel
+    public partial class CreateErc20TokenModel
     {
         /// <summary>
-        /// Initializes a new instance of the CheckPendingModel class.
+        /// Initializes a new instance of the CreateErc20TokenModel class.
         /// </summary>
-        public CheckPendingModel()
+        public CreateErc20TokenModel()
         {
             CustomInit();
         }
 
         /// <summary>
-        /// Initializes a new instance of the CheckPendingModel class.
+        /// Initializes a new instance of the CreateErc20TokenModel class.
         /// </summary>
-        public CheckPendingModel(string coinAdapterAddress, string userAddress)
+        public CreateErc20TokenModel(string address, string name = default(string))
         {
-            CoinAdapterAddress = coinAdapterAddress;
-            UserAddress = userAddress;
+            Address = address;
+            Name = name;
             CustomInit();
         }
 
@@ -37,13 +37,13 @@ namespace Lykke.Service.EthereumCore.Client.Models
 
         /// <summary>
         /// </summary>
-        [JsonProperty(PropertyName = "coinAdapterAddress")]
-        public string CoinAdapterAddress { get; set; }
+        [JsonProperty(PropertyName = "address")]
+        public string Address { get; set; }
 
         /// <summary>
         /// </summary>
-        [JsonProperty(PropertyName = "userAddress")]
-        public string UserAddress { get; set; }
+        [JsonProperty(PropertyName = "name")]
+        public string Name { get; set; }
 
         /// <summary>
         /// Validate the object.
@@ -53,13 +53,9 @@ namespace Lykke.Service.EthereumCore.Client.Models
         /// </exception>
         public virtual void Validate()
         {
-            if (CoinAdapterAddress == null)
+            if (Address == null)
             {
-                throw new ValidationException(ValidationRules.CannotBeNull, "CoinAdapterAddress");
-            }
-            if (UserAddress == null)
-            {
-                throw new ValidationException(ValidationRules.CannotBeNull, "UserAddress");
+                throw new ValidationException(ValidationRules.CannotBeNull, "Address");
             }
         }
     }

@@ -10,6 +10,7 @@ using System.Numerics;
 using System.Threading.Tasks;
 using AzureStorage.Queue;
 using Core.Messages;
+using Services.Erc20;
 
 namespace Services
 {
@@ -31,6 +32,7 @@ namespace Services
         private readonly IBaseSettings _settings;
         private readonly Web3 _web3;
         private readonly IQueueExt _coinAdapterCreateQueue;
+        private readonly IErc20Service _erc20Service;
         private readonly ITransferContractService _transferContractService;
 
         public AssetContractService(IBaseSettings settings,
@@ -40,7 +42,8 @@ namespace Services
             IErcInterfaceService ercInterfaceService, 
             Web3 web3, 
             ITransferContractService transferContractService,
-            IQueueFactory queueFactory)
+            IQueueFactory queueFactory,
+            IErc20Service erc20Service)
         {
             _transferContractService = transferContractService;
             _settings = settings;
@@ -49,6 +52,7 @@ namespace Services
             _ercInterfaceService = ercInterfaceService;
             _web3 = web3;
             _coinAdapterCreateQueue = queueFactory.Build(Constants.CoinAdapterCreateQueue);
+            _erc20Service = erc20Service;
         }
 
         public Task<IEnumerable<ICoin>> GetAll()
@@ -80,7 +84,16 @@ namespace Services
                     throw new ClientSideException(ExceptionType.MissingRequiredParams, "coin.ExternalTokenAddress should not be empty");
                 }
 
-                //TODO: check that external exists
+                IErc20Contract existingAddress = await _erc20Service.GetByAddress(coin.ExternalTokenAddress);
+                if (existingAddress != null)
+                {
+                    await _erc20Service.AddSupportedErc20TokenAsync(new Erc20Contract()
+                    {
+                        TokenAddress = coin.ExternalTokenAddress,
+                        TokenName = coin.Name
+                    });
+                }
+
                 abi = _settings.TokenAdapterContract.Abi;
                 byteCode = _settings.TokenAdapterContract.ByteCode;
                 constructorParametes = new string[] { _settings.MainExchangeContract.Address, coin.ExternalTokenAddress, _settings.DepositAdminContract.Address };

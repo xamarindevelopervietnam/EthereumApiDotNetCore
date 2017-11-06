@@ -58,7 +58,7 @@ namespace Service.UnitTests.PrivateWallet
             _erc20Service = new Erc20PrivateWalletService(web3Mock.Object,
                 _nonceCalc,
                 baseSettings.Object,
-                rawTransactionSubmitter);
+                rawTransactionSubmitter, null,null,null);
         }
 
         [TestMethod]

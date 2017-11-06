@@ -9,23 +9,25 @@ namespace Lykke.Service.EthereumCore.Client.Models
     using Newtonsoft.Json;
     using System.Linq;
 
-    public partial class CheckIdResponse
+    public partial class CreateCoinAdapterModelWithToken
     {
         /// <summary>
-        /// Initializes a new instance of the CheckIdResponse class.
+        /// Initializes a new instance of the CreateCoinAdapterModelWithToken
+        /// class.
         /// </summary>
-        public CheckIdResponse()
+        public CreateCoinAdapterModelWithToken()
         {
             CustomInit();
         }
 
         /// <summary>
-        /// Initializes a new instance of the CheckIdResponse class.
+        /// Initializes a new instance of the CreateCoinAdapterModelWithToken
+        /// class.
         /// </summary>
-        public CheckIdResponse(bool? isOk = default(bool?), System.Guid? proposedId = default(System.Guid?))
+        public CreateCoinAdapterModelWithToken(string externalTokenAddress = default(string), string tokenName = default(string))
         {
-            IsOk = isOk;
-            ProposedId = proposedId;
+            ExternalTokenAddress = externalTokenAddress;
+            TokenName = tokenName;
             CustomInit();
         }
 
@@ -36,13 +38,13 @@ namespace Lykke.Service.EthereumCore.Client.Models
 
         /// <summary>
         /// </summary>
-        [JsonProperty(PropertyName = "isOk")]
-        public bool? IsOk { get; set; }
+        [JsonProperty(PropertyName = "externalTokenAddress")]
+        public string ExternalTokenAddress { get; set; }
 
         /// <summary>
         /// </summary>
-        [JsonProperty(PropertyName = "proposedId")]
-        public System.Guid? ProposedId { get; set; }
+        [JsonProperty(PropertyName = "tokenName")]
+        public string TokenName { get; set; }
 
     }
 }

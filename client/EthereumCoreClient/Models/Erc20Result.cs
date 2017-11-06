@@ -9,23 +9,23 @@ namespace Lykke.Service.EthereumCore.Client.Models
     using Newtonsoft.Json;
     using System.Linq;
 
-    public partial class CheckIdResponse
+    public partial class Erc20Result
     {
         /// <summary>
-        /// Initializes a new instance of the CheckIdResponse class.
+        /// Initializes a new instance of the Erc20Result class.
         /// </summary>
-        public CheckIdResponse()
+        public Erc20Result()
         {
             CustomInit();
         }
 
         /// <summary>
-        /// Initializes a new instance of the CheckIdResponse class.
+        /// Initializes a new instance of the Erc20Result class.
         /// </summary>
-        public CheckIdResponse(bool? isOk = default(bool?), System.Guid? proposedId = default(System.Guid?))
+        public Erc20Result(string tokenAddress = default(string), string tokenName = default(string))
         {
-            IsOk = isOk;
-            ProposedId = proposedId;
+            TokenAddress = tokenAddress;
+            TokenName = tokenName;
             CustomInit();
         }
 
@@ -36,13 +36,13 @@ namespace Lykke.Service.EthereumCore.Client.Models
 
         /// <summary>
         /// </summary>
-        [JsonProperty(PropertyName = "isOk")]
-        public bool? IsOk { get; set; }
+        [JsonProperty(PropertyName = "tokenAddress")]
+        public string TokenAddress { get; set; }
 
         /// <summary>
         /// </summary>
-        [JsonProperty(PropertyName = "proposedId")]
-        public System.Guid? ProposedId { get; set; }
+        [JsonProperty(PropertyName = "tokenName")]
+        public string TokenName { get; set; }
 
     }
 }

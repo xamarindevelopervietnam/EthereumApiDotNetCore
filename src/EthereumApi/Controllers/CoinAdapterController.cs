@@ -29,7 +29,7 @@ namespace EthereumApi.Controllers
             _logger               = logger;
         }
 
-        [Route("create")]
+        [Route("create/common")]
         [HttpPost]
         [ProducesResponseType(typeof(EventResponse), 200)]
         public async Task<IActionResult> CreateCoinAdapter([FromBody] CreateAssetModel model)
@@ -49,6 +49,36 @@ namespace EthereumApi.Controllers
                 Id                       = id.ToString(),
                 Multiplier               = model.Multiplier,
                 Name                     = model.Name
+            };
+
+            await _assetContractService.EnqueueCoinContractCreationAsync(asset);
+
+            return Ok(new EventResponse
+            {
+                EventId = id
+            });
+        }
+
+        [Route("create/erc20")]
+        [HttpPost]
+        [ProducesResponseType(typeof(EventResponse), 200)]
+        public async Task<IActionResult> CreateCoinAdapterWithErc20SupportAsync([FromBody] CreateCoinAdapterModelWithToken model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var id = Guid.NewGuid();
+            var asset = new Coin
+            {
+                ExternalTokenAddress = model.ExternalTokenAddress,
+                ContainsEth = false,
+                Blockchain = "Ethereum",
+                BlockchainDepositEnabled = true,
+                Id = id.ToString(),
+                Multiplier = 1,
+                Name = model.TokenName,
             };
 
             await _assetContractService.EnqueueCoinContractCreationAsync(asset);

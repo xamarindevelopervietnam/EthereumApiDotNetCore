@@ -9,23 +9,22 @@ namespace Lykke.Service.EthereumCore.Client.Models
     using Newtonsoft.Json;
     using System.Linq;
 
-    public partial class CheckIdResponse
+    public partial class EventResponse
     {
         /// <summary>
-        /// Initializes a new instance of the CheckIdResponse class.
+        /// Initializes a new instance of the EventResponse class.
         /// </summary>
-        public CheckIdResponse()
+        public EventResponse()
         {
             CustomInit();
         }
 
         /// <summary>
-        /// Initializes a new instance of the CheckIdResponse class.
+        /// Initializes a new instance of the EventResponse class.
         /// </summary>
-        public CheckIdResponse(bool? isOk = default(bool?), System.Guid? proposedId = default(System.Guid?))
+        public EventResponse(System.Guid? eventId = default(System.Guid?))
         {
-            IsOk = isOk;
-            ProposedId = proposedId;
+            EventId = eventId;
             CustomInit();
         }
 
@@ -36,13 +35,8 @@ namespace Lykke.Service.EthereumCore.Client.Models
 
         /// <summary>
         /// </summary>
-        [JsonProperty(PropertyName = "isOk")]
-        public bool? IsOk { get; set; }
-
-        /// <summary>
-        /// </summary>
-        [JsonProperty(PropertyName = "proposedId")]
-        public System.Guid? ProposedId { get; set; }
+        [JsonProperty(PropertyName = "eventId")]
+        public System.Guid? EventId { get; set; }
 
     }
 }

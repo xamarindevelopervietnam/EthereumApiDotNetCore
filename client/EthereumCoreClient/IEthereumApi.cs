@@ -4,7 +4,7 @@
 // regenerated.
 // </auto-generated>
 
-namespace Lykke.EthereumCoreClient
+namespace Lykke.Service.EthereumCore.Client
 {
     using Microsoft.Rest;
     using Models;
@@ -43,6 +43,34 @@ namespace Lykke.EthereumCoreClient
         /// The cancellation token.
         /// </param>
         Task<HttpOperationResponse<object>> ApiErc20BalancePostWithHttpMessagesAsync(GetErcBalance ercTransaction = default(GetErcBalance), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+
+        /// <param name='customHeaders'>
+        /// The headers that will be added to request.
+        /// </param>
+        /// <param name='cancellationToken'>
+        /// The cancellation token.
+        /// </param>
+        Task<HttpOperationResponse<ListResultErc20Result>> ApiErc20TokenGetWithHttpMessagesAsync(Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+
+        /// <param name='model'>
+        /// </param>
+        /// <param name='customHeaders'>
+        /// The headers that will be added to request.
+        /// </param>
+        /// <param name='cancellationToken'>
+        /// The cancellation token.
+        /// </param>
+        Task<HttpOperationResponse> ApiErc20TokenCreatePostWithHttpMessagesAsync(CreateErc20TokenModel model = default(CreateErc20TokenModel), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+
+        /// <param name='address'>
+        /// </param>
+        /// <param name='customHeaders'>
+        /// The headers that will be added to request.
+        /// </param>
+        /// <param name='cancellationToken'>
+        /// The cancellation token.
+        /// </param>
+        Task<HttpOperationResponse> ApiErc20TokenByAddressDeleteWithHttpMessagesAsync(string address, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <param name='ercTransaction'>
         /// </param>
@@ -332,6 +360,16 @@ namespace Lykke.EthereumCoreClient
 
         /// <param name='userAddress'>
         /// </param>
+        /// <param name='customHeaders'>
+        /// The headers that will be added to request.
+        /// </param>
+        /// <param name='cancellationToken'>
+        /// The cancellation token.
+        /// </param>
+        Task<HttpOperationResponse<object>> ApiTransitionDepositContractAddressByUserAddressGetWithHttpMessagesAsync(string userAddress, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+
+        /// <param name='userAddress'>
+        /// </param>
         /// <param name='coinAdapterAddress'>
         /// </param>
         /// <param name='customHeaders'>
@@ -342,15 +380,17 @@ namespace Lykke.EthereumCoreClient
         /// </param>
         Task<HttpOperationResponse<object>> ApiTransitionContractAddressByUserAddressByCoinAdapterAddressGetWithHttpMessagesAsync(string userAddress, string coinAdapterAddress, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
+        /// <param name='model'>
+        /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.
         /// </param>
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationResponse<ListResultCoinResult>> ApiCoinAdapterGetWithHttpMessagesAsync(Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationResponse<EventResponse>> ApiCoinAdapterCreateCommonPostWithHttpMessagesAsync(CreateAssetModel model = default(CreateAssetModel), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
-        /// <param name='adapterAddress'>
+        /// <param name='model'>
         /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.
@@ -358,7 +398,19 @@ namespace Lykke.EthereumCoreClient
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationResponse<ExistsModel>> ApiCoinAdapterExistsByAdapterAddressGetWithHttpMessagesAsync(string adapterAddress, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationResponse<EventResponse>> ApiCoinAdapterCreateErc20PostWithHttpMessagesAsync(CreateCoinAdapterModelWithToken model = default(CreateCoinAdapterModelWithToken), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+
+        /// <param name='coinAdapterAddress'>
+        /// </param>
+        /// <param name='userAddress'>
+        /// </param>
+        /// <param name='customHeaders'>
+        /// The headers that will be added to request.
+        /// </param>
+        /// <param name='cancellationToken'>
+        /// The cancellation token.
+        /// </param>
+        Task<HttpOperationResponse<object>> ApiCoinAdapterBalanceByCoinAdapterAddressByUserAddressGetWithHttpMessagesAsync(string coinAdapterAddress, string userAddress, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <param name='id'>
         /// </param>
@@ -380,19 +432,15 @@ namespace Lykke.EthereumCoreClient
         /// </param>
         Task<HttpOperationResponse<CoinResult>> ApiCoinAdapterAddressByAdapterAddressGetWithHttpMessagesAsync(string adapterAddress, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
-        /// <param name='model'>
-        /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.
         /// </param>
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationResponse<RegisterResponse>> ApiCoinAdapterCreatePostWithHttpMessagesAsync(CreateAssetModel model = default(CreateAssetModel), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationResponse<ListResultCoinResult>> ApiCoinAdapterGetWithHttpMessagesAsync(Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
-        /// <param name='coinAdapterAddress'>
-        /// </param>
-        /// <param name='userAddress'>
+        /// <param name='adapterAddress'>
         /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.
@@ -400,7 +448,7 @@ namespace Lykke.EthereumCoreClient
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationResponse<object>> ApiCoinAdapterBalanceByCoinAdapterAddressByUserAddressGetWithHttpMessagesAsync(string coinAdapterAddress, string userAddress, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationResponse<ExistsModel>> ApiCoinAdapterExistsByAdapterAddressGetWithHttpMessagesAsync(string adapterAddress, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
     }
 }

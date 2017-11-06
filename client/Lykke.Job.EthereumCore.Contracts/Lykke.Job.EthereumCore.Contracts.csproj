@@ -2,6 +2,16 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Lykke</Authors>
+    <Company>Lykke</Company>
+    <PackageLicenseUrl>https://github.com/LykkeCity/EthereumApiDotNetCore/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/LykkeCity/EthereumApiDotNetCore</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/LykkeCity/EthereumApiDotNetCore.git</RepositoryUrl>
+    <PackageIconUrl>https://avatars3.githubusercontent.com/u/14153330?v=3&amp;s=200</PackageIconUrl>
+    <RepositoryType>Git</RepositoryType>
+    <PackageReleaseNotes>Lykke</PackageReleaseNotes>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>

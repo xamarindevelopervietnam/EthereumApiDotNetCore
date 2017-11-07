@@ -85,13 +85,19 @@ namespace Services
                 }
 
                 IErc20Contract existingAddress = await _erc20Service.GetByAddress(coin.ExternalTokenAddress);
-                if (existingAddress != null)
+                if (existingAddress == null)
                 {
                     await _erc20Service.AddSupportedErc20TokenAsync(new Erc20Contract()
                     {
                         TokenAddress = coin.ExternalTokenAddress,
                         TokenName = coin.Name
                     });
+                }
+
+                var existingCoin = await _coinRepository.GetCoinByTokenAddress(coin.ExternalTokenAddress);
+                if (existingCoin != null)
+                {
+                    throw new Exception("CoinAdapter Already Exists");
                 }
 
                 abi = _settings.TokenAdapterContract.Abi;

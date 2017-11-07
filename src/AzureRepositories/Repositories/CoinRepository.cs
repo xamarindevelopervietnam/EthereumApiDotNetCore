@@ -59,6 +59,18 @@ namespace AzureRepositories.Repositories
             return coin;
         }
 
+        public async Task<ICoin> GetCoinByTokenAddress(string tokenAddress)
+        {
+            var existingIndex = await _tokenIndex.GetDataAsync(TokenIndexName, tokenAddress?.ToLower());
+
+            if (existingIndex == null)
+                return null;
+
+            var coin = await _table.GetDataAsync(existingIndex);
+
+            return coin;
+        }
+
         public async Task InsertOrReplace(ICoin coin)
         {
             var entity = CoinEntity.CreateCoinEntity(coin);

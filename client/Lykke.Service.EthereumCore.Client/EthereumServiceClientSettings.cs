@@ -1,4 +1,4 @@
-﻿namespace Lykke.EthereumCoreClient
+﻿namespace Lykke.Service.EthereumCore.Client
 {
     public class EthereumServiceClientSettings
     {

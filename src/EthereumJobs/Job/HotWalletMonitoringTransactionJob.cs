@@ -11,8 +11,6 @@ using Core.Settings;
 using Core.Notifiers;
 using Core.Repositories;
 using Services;
-using Newtonsoft.Json;
-using Services.New;
 using Services.HotWallet;
 using RabbitMQ;
 using Lykke.Job.EthereumCore.Contracts.Events;
@@ -25,43 +23,38 @@ namespace EthereumJobs.Job
         private readonly ICoinTransactionService _coinTransactionService;
         private readonly IBaseSettings _settings;
         private readonly ISlackNotifier _slackNotifier;
-        private readonly ICoinEventService _coinEventService;
-        private readonly IPendingTransactionsRepository _pendingTransactionsRepository;
-        private readonly IPendingOperationService _pendingOperationService;
-        private readonly ITransactionEventsService _transactionEventsService;
-        private readonly IEventTraceRepository _eventTraceRepository;
-        private readonly IUserTransferWalletRepository _userTransferWalletRepository;
-        private readonly IHotWalletCashoutTransactionRepository _hotWalletCashoutTransactionRepository;
-        private readonly IHotWalletCashoutRepository _hotWalletCashoutRepository;
+        private readonly IHotWalletTransactionRepository _hotWalletCashoutTransactionRepository;
+        private readonly IHotWalletOperationRepository _hotWalletCashoutRepository;
         private readonly IHotWalletService _hotWalletService;
         private readonly IRabbitQueuePublisher _rabbitQueuePublisher;
         private readonly IEthereumTransactionService _ethereumTransactionService;
+        private readonly ICashinEventRepository _cashinEventRepository;
+
 
         public HotWalletMonitoringTransactionJob(ILog log,
             ICoinTransactionService coinTransactionService,
-            IBaseSettings settings, ISlackNotifier slackNotifier,
-            ITransactionEventsService transactionEventsService,
-            IUserTransferWalletRepository userTransferWalletRepository,
+            IBaseSettings settings,
+            ISlackNotifier slackNotifier,
             IEthereumTransactionService ethereumTransactionService,
-            IHotWalletCashoutTransactionRepository hotWalletCashoutTransactionRepository,
-            IHotWalletCashoutRepository hotWalletCashoutRepository,
+            IHotWalletTransactionRepository hotWalletCashoutTransactionRepository,
+            IHotWalletOperationRepository hotWalletCashoutRepository,
             IHotWalletService hotWalletService,
-            IRabbitQueuePublisher rabbitQueuePublisher)
+            IRabbitQueuePublisher rabbitQueuePublisher,
+            ICashinEventRepository cashinEventRepository)
         {
             _ethereumTransactionService = ethereumTransactionService;
-            _transactionEventsService = transactionEventsService;
             _settings = settings;
             _log = log;
             _coinTransactionService = coinTransactionService;
             _slackNotifier = slackNotifier;
-            _userTransferWalletRepository = userTransferWalletRepository;
             _hotWalletCashoutTransactionRepository = hotWalletCashoutTransactionRepository;
             _hotWalletCashoutRepository = hotWalletCashoutRepository;
             _hotWalletService = hotWalletService;
             _rabbitQueuePublisher = rabbitQueuePublisher;
+            _cashinEventRepository = cashinEventRepository;
         }
 
-        [QueueTrigger(Constants.HotWalletCashoutTransactionMonitoringQueue, 100, true)]
+        [QueueTrigger(Constants.HotWalletTransactionMonitoringQueue, 100, true)]
         public async Task Execute(CoinTransactionMessage transaction, QueueTriggeringContext context)
         {
             ICoinTransaction coinTransaction = null;
@@ -95,8 +88,7 @@ namespace EthereumJobs.Job
             }
             else
             {
-                if (coinTransaction != null &&
-                    coinTransaction.ConfirmationLevel >= CoinTransactionService.Level2Confirm)
+                if (coinTransaction.ConfirmationLevel >= CoinTransactionService.Level2Confirm)
                 {
                     if (!coinTransaction.Error)
                     {
@@ -115,7 +107,6 @@ namespace EthereumJobs.Job
                     }
                     else
                     {
-                        IHotWalletCashout coinEvent = await GetCashoutOperation(transaction.TransactionHash, transaction.OperationId);
                         await _slackNotifier.ErrorAsync($"EthereumCoreService: HOTWALLET - Transaction with hash {transaction.TransactionHash} has an Error!");
                         await RepeatOperationTillWin(transaction);
                         await _slackNotifier.ErrorAsync($"EthereumCoreService: HOTWALLET - Transaction with hash {transaction.TransactionHash} has an Error. RETRY!");
@@ -130,7 +121,7 @@ namespace EthereumJobs.Job
             }
         }
 
-        private async Task<IHotWalletCashout> GetCashoutOperation(string trHash, string operationId)
+        private async Task<IHotWalletOperation> GetOperationAsync(string trHash, string operationId)
         {
             var cashoutTransaction = await _hotWalletCashoutTransactionRepository.GetByTransactionHashAsync(trHash) ??
                 await _hotWalletCashoutTransactionRepository.GetByOperationIdAsync(operationId);
@@ -141,8 +132,20 @@ namespace EthereumJobs.Job
 
         private async Task RepeatOperationTillWin(CoinTransactionMessage message)
         {
-            var cashout = await GetCashoutOperation(message?.TransactionHash, message?.OperationId);
-            await _hotWalletService.RetryCashoutAsync(cashout);
+            var operation = await GetOperationAsync(message?.TransactionHash, message?.OperationId);
+            switch (operation.OperationType)
+            {
+                case HotWalletOperationType.Cashout:
+                    await _hotWalletService.RetryCashoutAsync(operation);
+                    break;
+
+                case HotWalletOperationType.Cashin:
+                    await _hotWalletService.RemoveCashinLockAsync(operation.TokenAddress, operation.FromAddress);
+                    break;
+
+                default:
+                    return;
+            }
         }
 
         //return whether we have sent to rabbit or not
@@ -150,18 +153,35 @@ namespace EthereumJobs.Job
         {
             try
             {
-                var cashout = await GetCashoutOperation(transactionHash, operationId);
-                if (cashout == null)
+                var operation = await GetOperationAsync(transactionHash, operationId);
+                if (operation == null)
                 {
                     return false;
                 }
-                HotWalletEvent @event = new HotWalletEvent(cashout.OperationId, 
+
+                string amount;
+                Lykke.Job.EthereumCore.Contracts.Enums.HotWalletEventType type;
+                switch (operation.OperationType)
+                {
+                    case HotWalletOperationType.Cashout:
+                        amount = operation.Amount.ToString();
+                        type = Lykke.Job.EthereumCore.Contracts.Enums.HotWalletEventType.CashoutCompleted;
+                        break;
+                    case HotWalletOperationType.Cashin:
+                        await _hotWalletService.RemoveCashinLockAsync(operation.TokenAddress, operation.FromAddress);
+                        amount = (await _cashinEventRepository.GetAsync(transactionHash)).Amount;
+                        type = Lykke.Job.EthereumCore.Contracts.Enums.HotWalletEventType.CashinCompleted;
+                        break;
+                    default:
+                        return false;
+                }
+                HotWalletEvent @event = new HotWalletEvent(operation.OperationId, 
                     transactionHash,
-                    cashout.FromAddress, 
-                    cashout.ToAddress,
-                    cashout.Amount.ToString(),
-                    cashout.TokenAddress,
-                    Lykke.Job.EthereumCore.Contracts.Enums.HotWalletEventType.CashoutCompleted);
+                    operation.FromAddress, 
+                    operation.ToAddress,
+                    amount,
+                    operation.TokenAddress,
+                    type);
 
                 await _rabbitQueuePublisher.PublshEvent(@event);
                 return true;

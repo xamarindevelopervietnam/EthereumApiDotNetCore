@@ -130,11 +130,11 @@ namespace AzureRepositories
                 new AzureTableStorage<OwnerEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.OwnerTable,
                     provider.GetService<ILog>())));
 
-            services.AddSingleton<IHotWalletCashoutRepository>(provider => new HotWalletCashoutRepository(
+            services.AddSingleton<IHotWalletOperationRepository>(provider => new HotWalletOperationRepository(
                 new AzureTableStorage<HotWalletCashoutEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.HotWalletCashoutTable,
                     provider.GetService<ILog>())));
 
-            services.AddSingleton<IHotWalletCashoutTransactionRepository>(provider => new HotWalletCashoutTransactionRepository(
+            services.AddSingleton<IHotWalletTransactionRepository>(provider => new HotWalletTransactionRepository(
                 new AzureTableStorage<HotWalletCashoutTransactionOpIdPartitionEntity>(settings.Db.DataConnString, 
                 Constants.StoragePrefix + Constants.HotWalletCashoutTransactionTable,
                     provider.GetService<ILog>()),
@@ -145,7 +145,11 @@ namespace AzureRepositories
             services.AddSingleton<IErc20DepositContractRepository>(provider => new Erc20DepositContractRepository(
                 new AzureTableStorage<Erc20DepositContractEntity>(settings.Db.DataConnString,
                 Constants.StoragePrefix + Constants.Erc20DepositContractTable,
-                provider.GetService<ILog>())));
+                provider.GetService<ILog>()),
+                new AzureTableStorage<Erc20DepositContractReversedEntity>(settings.Db.DataConnString,
+                Constants.StoragePrefix + Constants.Erc20DepositContractTable,
+                provider.GetService<ILog>())
+                ));
 
         }
 

@@ -89,6 +89,12 @@
     <PackageReference Include="Portable.BouncyCastle" Version="1.8.1.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="contracts\bin\interfaces\" />
+    <Folder Include="contracts\bin\token\" />
+    <Folder Include="contracts\token\bin\" />
+  </ItemGroup>
+
   <ProjectExtensions><VisualStudio><UserProperties generalsettings_3template_1json__JSONSchema="http://json.schemastore.org/contribute" /></VisualStudio></ProjectExtensions>
 
 </Project>

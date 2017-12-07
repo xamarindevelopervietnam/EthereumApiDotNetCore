@@ -7,8 +7,10 @@ contract ERC20Token is ERC20Interface, SafeMath {
 
   mapping (address => uint256) accounts;
   mapping (address => mapping (address => uint256)) private allowances;
+  bool isBlocked;
 
   function ERC20Token () {
+    isBlocked = false;
   }
 
   function balanceOf (address _owner) constant returns (uint256 balance) {
@@ -16,6 +18,7 @@ contract ERC20Token is ERC20Interface, SafeMath {
   }
 
   function transfer (address _to, uint256 _value) returns (bool success) {
+    if (isBlocked) throw;
     if (accounts [msg.sender] < _value) return false;
     if (_value > 0 && msg.sender != _to) {
       accounts [msg.sender] = safeSub (accounts [msg.sender], _value);
@@ -27,6 +30,7 @@ contract ERC20Token is ERC20Interface, SafeMath {
 
   function transferFrom (address _from, address _to, uint256 _value)
   returns (bool success) {
+    if (isBlocked) throw;
     if (allowances [_from][msg.sender] < _value) return false;
     if (accounts [_from] < _value) return false;
 
@@ -42,6 +46,7 @@ contract ERC20Token is ERC20Interface, SafeMath {
   }
 
   function approve (address _spender, uint256 _value) returns (bool success) {
+    if (isBlocked) throw;
     allowances [msg.sender][_spender] = _value;
     Approval (msg.sender, _spender, _value);
 
@@ -51,5 +56,13 @@ contract ERC20Token is ERC20Interface, SafeMath {
   function allowance (address _owner, address _spender) constant
   returns (uint256 remaining) {
     return allowances [_owner][_spender];
+  }
+
+  function blockTransfers() {
+    isBlocked = true;
+  }
+
+  function unBlockTransfers() {
+    isBlocked = false;
   }
 }

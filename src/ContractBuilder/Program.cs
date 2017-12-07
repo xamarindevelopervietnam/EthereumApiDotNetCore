@@ -26,6 +26,7 @@ using Core.Repositories;
 using Nethereum.Util;
 using EthereumJobs.Job;
 using EthereumContract = Core.Settings.EthereumContract;
+using System.Diagnostics.Contracts;
 
 namespace ContractBuilder
 {
@@ -83,9 +84,9 @@ namespace ContractBuilder
             //    Key = "",
             //});
 
-            var service = ServiceProvider.GetService<IErcInterfaceService>();
-            service.Transfer("0x5adbf411faf2595698d80b7f93d570dd16d7f4b2", settings.EthereumCore.EthereumMainAccount,
-                "0xae4d8b0c887508750ddb6b32752a82431941e2e7", System.Numerics.BigInteger.Parse("10000000000000000000")).Wait();
+            //var service = ServiceProvider.GetService<IErcInterfaceService>();
+            //service.Transfer("0x5adbf411faf2595698d80b7f93d570dd16d7f4b2", settings.EthereumCore.EthereumMainAccount,
+            //    "0xae4d8b0c887508750ddb6b32752a82431941e2e7", System.Numerics.BigInteger.Parse("10000000000000000000")).Wait();
             //var paymentService = ServiceProvider.GetService<IPaymentService>();
             //    string result = paymentService.SendEthereum(settings.EthereumMainAccount, 
             //    "0xbb0a9c08030898cdaf1f28633f0d3c8556155482", new System.Numerics.BigInteger(5000000000000000)).Result;
@@ -549,11 +550,33 @@ namespace ContractBuilder
             try
             {
                 var settings = GetCurrentSettings();
-                var abi = GetFileContent("BCAPToken.abi");
-                var bytecode = GetFileContent("BCAPToken.bin");
-                string contractAddress = await ServiceProvider.GetService<IContractService>().CreateContract(abi, bytecode, settings.EthereumCore.EthereumMainAccount);
+                var abi = GetFileContent("Lkk2yToken.abi");
+                var bytecode = GetFileContent("Lkk2yToken.bin");
+                var web3 = ServiceProvider.GetService<Web3>();
+                string contractAddress = await ServiceProvider.GetService<IContractService>()
+                    .CreateContract(abi, bytecode, settings.EthereumCore.EthereumMainAccount);
 
-                settings.EthereumCore.MainExchangeContract = new EthereumContract { Abi = abi, ByteCode = bytecode, Address = contractAddress };
+                var contract = web3.Eth.GetContract(abi, contractAddress);
+
+                //{
+                //    var function = contract.GetFunction("blockTransfers");
+
+                //    string trHash = await function.SendTransactionAsync(settings.EthereumCore.EthereumMainAccount);
+
+                //    var service = ServiceProvider.GetService<IErcInterfaceService>();
+                //    string hash = service.Transfer(contractAddress, settings.EthereumCore.EthereumMainAccount,
+                //        "0xae4d8b0c887508750ddb6b32752a82431941e2e7", System.Numerics.BigInteger.Parse("10000000000000000000")).Result;
+                //}
+
+                //{
+                //    var function = contract.GetFunction("unBlockTransfers");
+
+                //    string trHash = await function.SendTransactionAsync(settings.EthereumCore.EthereumMainAccount);
+
+                    var service = ServiceProvider.GetService<IErcInterfaceService>();
+                    string hash = service.Transfer(contractAddress, settings.EthereumCore.EthereumMainAccount,
+                        "0xae4d8b0c887508750ddb6b32752a82431941e2e7", System.Numerics.BigInteger.Parse("10000000000000000000")).Result;
+                //}
                 Console.WriteLine("New BCAP Token: " + contractAddress);
 
                 SaveSettings(settings);

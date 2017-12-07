@@ -1,4 +1,4 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.9;
 
 import "./token/erc20Contract.sol";
 

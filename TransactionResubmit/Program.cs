@@ -68,6 +68,7 @@ namespace TransactionResubmit
             Console.WriteLine($"Type 8 to RESUBMIT all cashin coin events");
             Console.WriteLine($"Type 9 to REMOVE DUPLICATE user transfer wallet locks");
             Console.WriteLine($"Type 10 to move from pending-poison to processing");
+            Console.WriteLine($"Type 12 remove UserTransferWallet all enties");
             var command = "";
 
             do
@@ -105,6 +106,9 @@ namespace TransactionResubmit
                     case "10":
                         MoveFromPoisonToProcessing();
                         break;
+                    case "12":
+                        RemoveUserTransferWallet();
+                        break;
                     default:
                         break;
                 }
@@ -112,6 +116,46 @@ namespace TransactionResubmit
             while (command != "0");
 
             Console.WriteLine("Exited");
+        }
+
+        private static void RemoveUserTransferWallet()
+        {
+            try
+            {
+                Console.WriteLine("Are you sure?: Y/N");
+                var input = Console.ReadLine();
+                if (input.ToLower() != "y")
+                {
+                    Console.WriteLine("Cancel");
+                    return;
+                }
+                Console.WriteLine("Started");
+
+                var repository = ServiceProvider.GetService<IUserTransferWalletRepository>();
+                var getAll = repository.GetAllAsync().Result;
+
+                foreach (var item in getAll)
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        try
+                        {
+                            repository.DeleteAsync(item.UserAddress, item.TransferContractAddress).Wait();
+                            break;
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Retry on remove");
+                        }
+                    }
+                }
+
+                Console.WriteLine("All Processed");
+            }
+            catch (Exception e)
+            {
+
+            }
         }
 
         private static void MoveFromPoisonToProcessing()

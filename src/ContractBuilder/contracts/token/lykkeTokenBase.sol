@@ -10,11 +10,12 @@ contract LykkeTokenBase is ERC20Token {
   uint8 public decimals;
 
   function LykkeTokenBase(
+      address contractOwner, 
       address issuer,
       string tokenName,
       uint8 divisibility,
       string tokenSymbol, 
-      string version) ERC20Token(){
+      string version) ERC20Token(contractOwner){
     symbol = tokenSymbol;
     standard = version;
     name = tokenName;

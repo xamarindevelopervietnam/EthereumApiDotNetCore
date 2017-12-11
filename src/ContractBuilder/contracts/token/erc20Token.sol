@@ -5,12 +5,15 @@ import "./safeMath.sol";
 
 contract ERC20Token is ERC20Interface, SafeMath {
 
+  modifier onlyowner { if (msg.sender == contractOwner) _; }
   mapping (address => uint256) accounts;
   mapping (address => mapping (address => uint256)) private allowances;
   bool isBlocked;
+  address contractOwner;
 
-  function ERC20Token () {
+  function ERC20Token (address _contractOwner) {
     isBlocked = false;
+    contractOwner = _contractOwner;
   }
 
   function balanceOf (address _owner) constant returns (uint256 balance) {
@@ -58,11 +61,11 @@ contract ERC20Token is ERC20Interface, SafeMath {
     return allowances [_owner][_spender];
   }
 
-  function blockTransfers() {
+  function blockTransfers() onlyowner {
     isBlocked = true;
   }
 
-  function unBlockTransfers() {
+  function unBlockTransfers() onlyowner {
     isBlocked = false;
   }
 }

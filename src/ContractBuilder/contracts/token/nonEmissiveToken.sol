@@ -6,12 +6,13 @@ contract NonEmissiveToken is LykkeTokenBase {
 
   uint256 internal _initialSupply;
 
-  function NonEmissiveToken(address issuer,
+  function NonEmissiveToken(address contractOwner,
+                    address issuer,
                     string tokenName,
                     uint8 divisibility,
                     string tokenSymbol, 
                     string version, 
-                    uint256 initialSupply) LykkeTokenBase(issuer, tokenName, divisibility, tokenSymbol, version){
+                    uint256 initialSupply) LykkeTokenBase(contractOwner, issuer, tokenName, divisibility, tokenSymbol, version){
     _initialSupply = initialSupply;
     accounts [_issuer] = initialSupply;
   }

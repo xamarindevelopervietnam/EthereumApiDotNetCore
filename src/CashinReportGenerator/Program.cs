@@ -62,7 +62,6 @@ namespace CashinReportGenerator
             RegisterReposExt.RegisterAzureQueues(collection, settings.EthereumCore, settings.SlackNotifications);
             RegisterReposExt.RegisterAzureStorages(collection, settings.EthereumCore, settings.SlackNotifications);
             ServiceProvider = collection.BuildServiceProvider();
-            RegisterRabbitQueueEx.RegisterRabbitQueue(collection, settings.EthereumCore, ServiceProvider.GetService<ILog>());
             RegisterDependency.RegisterServices(collection);
             ServiceProvider = collection.BuildServiceProvider();
 

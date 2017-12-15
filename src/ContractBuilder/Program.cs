@@ -27,6 +27,8 @@ using Nethereum.Util;
 using EthereumJobs.Job;
 using EthereumContract = Core.Settings.EthereumContract;
 using System.Diagnostics.Contracts;
+using Services.PrivateWallet;
+using Nethereum.Hex.HexTypes;
 
 namespace ContractBuilder
 {
@@ -83,6 +85,15 @@ namespace ContractBuilder
             //{
             //    Key = "",
             //});
+
+            var web3 = ServiceProvider.GetService<Web3>();
+            var contract = web3.Eth.GetContract(GetCurrentSettings().EthereumCore.ERC20ABI, "0x0f513ffb4926ff82d7f60a05069047aca295c413");
+            var function = contract.GetFunction("transfer");
+            var gas = function.EstimateGasAsync("0x2c0975b493c116f7c2dd9c12bcaed0f89b657d70", 
+                new HexBigInteger(500000),
+                new HexBigInteger(0), 
+                "0xa9e9322e9d1f74cdbc109e818e488f45b37e20a5", 
+                BigInteger.Parse("10000000000000000")).Result;
 
             //var service = ServiceProvider.GetService<IErcInterfaceService>();
             //service.Transfer("0x5adbf411faf2595698d80b7f93d570dd16d7f4b2", settings.EthereumCore.EthereumMainAccount,

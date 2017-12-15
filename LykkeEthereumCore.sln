@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.12
+VisualStudioVersion = 15.0.27130.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Runners", "Runners", "{45765D82-186C-4CA6-A7B0-8B60052EFFCF}"
 EndProject
@@ -55,6 +55,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lykke.Job.EthereumCore.Contracts", "client\Lykke.Job.EthereumCore.Contracts\Lykke.Job.EthereumCore.Contracts.csproj", "{CCC87573-1C68-457A-B105-9DBFF82C2A7B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lykke.Service.EthereumCore.Client", "client\Lykke.Service.EthereumCore.Client\Lykke.Service.EthereumCore.Client.csproj", "{E7A8E6F1-EE41-4B1D-9189-55C516D8BDD4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CashinReportGenerator", "src\CashinReportGenerator\CashinReportGenerator.csproj", "{6DEF5223-8FF1-4B51-A4C1-6B1063FDBAA7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -138,6 +140,10 @@ Global
 		{E7A8E6F1-EE41-4B1D-9189-55C516D8BDD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E7A8E6F1-EE41-4B1D-9189-55C516D8BDD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E7A8E6F1-EE41-4B1D-9189-55C516D8BDD4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DEF5223-8FF1-4B51-A4C1-6B1063FDBAA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DEF5223-8FF1-4B51-A4C1-6B1063FDBAA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DEF5223-8FF1-4B51-A4C1-6B1063FDBAA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DEF5223-8FF1-4B51-A4C1-6B1063FDBAA7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CashinReportGenerator": {
+      "commandName": "Project",
+      "commandLineArgs": "\"DefaultEndpointsProtocol=https;AccountName=lkedevmain;AccountKey=l0W0CaoNiRZQIqJ536sIScSV5fUuQmPYRQYohj/UjO7+ZVdpUiEsRLtQMxD+1szNuAeJ351ndkOsdWFzWBXmdw==\" \"ETH\""
+    }
+  }
+}

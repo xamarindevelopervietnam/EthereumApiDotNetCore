@@ -15,6 +15,7 @@ using Services;
 using Services.Utils;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -45,8 +46,6 @@ namespace CashinReportGenerator
         static void Main(string[] args)
         {
             IServiceProvider ServiceProvider;
-            string clientPersonalInfoConnString = args[0];
-            string ethAssetId = args[1];
             var configurationBuilder = new ConfigurationBuilder()
            .SetBasePath(Directory.GetCurrentDirectory())
            .AddJsonFile("appsettings.json").AddEnvironmentVariables();
@@ -64,6 +63,9 @@ namespace CashinReportGenerator
             ServiceProvider = collection.BuildServiceProvider();
             RegisterDependency.RegisterServices(collection);
             ServiceProvider = collection.BuildServiceProvider();
+
+            string clientPersonalInfoConnString = settings.ClientPersonalInfoConnString;
+            string ethAssetId = settings.EthAssetId;
 
             var log = ServiceProvider.GetService<ILog>();
             var bcnRepositoryReader = new BcnClientCredentialsRepository(
@@ -242,7 +244,7 @@ namespace CashinReportGenerator
             }
         }
 
-        static SettingsWrapper GetCurrentSettings()
+        static SettingsWrapperExtended GetCurrentSettings()
         {
             FileInfo fi = new FileInfo(System.Reflection.Assembly.GetEntryAssembly().Location);
             var location = Path.Combine(fi.DirectoryName, "..", "..", "..");
@@ -252,8 +254,12 @@ namespace CashinReportGenerator
                 .AddEnvironmentVariables();
             var configuration = builder.Build();
             var settings = GeneralSettingsReader.ReadGeneralSettings<SettingsWrapper>(configuration.GetConnectionString("ConnectionString"));
+            SettingsWrapperExtended extendedConfig = settings.ConvertTo<SettingsWrapperExtended>();
 
-            return settings;
+            extendedConfig.EthAssetId = configuration["EthAssetId"];
+            extendedConfig.ClientPersonalInfoConnString = configuration["ClientPersonalInfoConnString"];
+
+            return extendedConfig;
         }
 
         public static async Task<IEnumerable<AddressHistoryModel>> GetAddressHistory(IEthereumSamuraiApi ethereumSamuraiApi,
@@ -313,5 +319,34 @@ namespace CashinReportGenerator
 
             return res;
         }
+    }
+
+    public static class Extensions
+    {
+        public static TConvert ConvertTo<TConvert>(this object entity) where TConvert : new()
+        {
+            var convertProperties = TypeDescriptor.GetProperties(typeof(TConvert)).Cast<PropertyDescriptor>();
+            var entityProperties = TypeDescriptor.GetProperties(entity).Cast<PropertyDescriptor>();
+
+            var convert = new TConvert();
+
+            foreach (var entityProperty in entityProperties)
+            {
+                var property = entityProperty;
+                var convertProperty = convertProperties.FirstOrDefault(prop => prop.Name == property.Name);
+                if (convertProperty != null)
+                {
+                    convertProperty.SetValue(convert, Convert.ChangeType(entityProperty.GetValue(entity), convertProperty.PropertyType));
+                }
+            }
+
+            return convert;
+        }
+    }
+
+    public class SettingsWrapperExtended : SettingsWrapper
+    {
+        public string ClientPersonalInfoConnString { get; set; }
+        public string EthAssetId { get; set; }
     }
 }

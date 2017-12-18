@@ -25,6 +25,17 @@ namespace CashinReportGenerator
 {
     class Program
     {
+        public class UserBalanceModel
+        {
+            public string ClientId { get; set; }
+
+            public string WalletBalance { get; set; }
+
+            public string BlockchainAmount { get; set; }
+
+            public DateTime DateTimeUtc { get; set; }
+        }
+
         public class ExternalTransactionModel
         {
             public string ClientId { get; set; }
@@ -64,6 +75,8 @@ namespace CashinReportGenerator
             RegisterDependency.RegisterServices(collection);
             ServiceProvider = collection.BuildServiceProvider();
 
+            string coinAdapterAddress = settings.CoinAdapterAddress;
+            string balancesInfoConnString = settings.BalancesInfoConnString;
             string clientPersonalInfoConnString = settings.ClientPersonalInfoConnString;
             string ethAssetId = settings.EthAssetId;
 
@@ -74,9 +87,95 @@ namespace CashinReportGenerator
             var privateWalletsReader = new PrivateWalletsRepository(
                     new AzureTableStorage<PrivateWalletEntity>(clientPersonalInfoConnString,
                         "PrivateWallets", log));
+            var wallets = new WalletsRepository(new AzureTableStorage<WalletEntity>(balancesInfoConnString, "Accounts", log));
+
             var samuraiApi = ServiceProvider.GetService<IEthereumSamuraiApi>();
             var ethPrecision = BigInteger.Pow(10, 18);
+            string command = "0";
 
+            Console.WriteLine("Type 1 - to make cashinReport");
+            Console.WriteLine("Type 2 - to make balance report");
+            Console.WriteLine("Type exit - to quit");
+
+            while (command != "exit")
+            {
+                command = Console.ReadLine();
+
+                switch (command)
+                {
+                    case "1":
+                        MakeCsvCashinReport(ethAssetId, bcnRepositoryReader, privateWalletsReader, samuraiApi);
+                        break;
+                    case "2":
+                        var assetContractService = ServiceProvider.GetService<AssetContractService>();
+                        using (var streamWriter = new StreamWriter("BalancesReport"))
+                        using (var csvWriter = new CsvHelper.CsvWriter(streamWriter, false))
+                        {
+                            try
+                            {
+
+                                csvWriter.WriteHeader<UserBalanceModel>();
+                                csvWriter.NextRecord();
+
+                                bcnRepositoryReader.ProcessAllAsync(async (wallet) =>
+                            {
+                                if (wallet.AssetId == ethAssetId)
+                                {
+                                    double walletBalance = 0;
+                                    BigInteger balanceOnAdapter = 0;
+                                    double balanceOnAdapterCalculated = 0;
+                                    await RetryPolicy.ExecuteAsync(async () =>
+                                    {
+                                        walletBalance = await wallets.GetWalletBalanceAsync(wallet.ClientId, ethAssetId);
+                                        balanceOnAdapter = await assetContractService.GetBalance(coinAdapterAddress, wallet.Address);
+                                    }, 3, 100);
+
+                                    {
+                                        string balanceOnAdapterString = balanceOnAdapter.ToString();
+                                        balanceOnAdapterCalculated = (double)ConvertFromContract(balanceOnAdapterString, 18, 6);
+                                    }
+
+                                    if (walletBalance != balanceOnAdapterCalculated)
+                                    {
+                                        UserBalanceModel model = new UserBalanceModel()
+                                        {
+                                            ClientId = wallet.ClientId,
+                                            BlockchainAmount = balanceOnAdapterCalculated.ToString(),
+                                            DateTimeUtc = DateTime.UtcNow,
+                                            WalletBalance = walletBalance.ToString()
+                                        };
+
+                                        csvWriter.WriteRecord<UserBalanceModel>(model);
+                                        csvWriter.NextRecord();
+                                    }
+
+                                    Console.WriteLine($"Requested {wallet.ClientId} {wallet.Address} {walletBalance} {balanceOnAdapterCalculated}");
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Skipping {wallet.ClientId} {wallet.Address}");
+                                }
+                            }).Wait();
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine($"Completly broken {e.Message} - {e.StackTrace}");
+                            }
+                        }
+
+                        Console.WriteLine("Completed for bcn repo");
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        private static void MakeCsvCashinReport(string ethAssetId,
+            BcnClientCredentialsRepository bcnRepositoryReader,
+            PrivateWalletsRepository privateWalletsReader,
+            IEthereumSamuraiApi samuraiApi)
+        {
             try
             {
                 using (var streamWriter = new StreamWriter("csvReport"))
@@ -258,6 +357,8 @@ namespace CashinReportGenerator
 
             extendedConfig.EthAssetId = configuration["EthAssetId"];
             extendedConfig.ClientPersonalInfoConnString = configuration["ClientPersonalInfoConnString"];
+            extendedConfig.BalancesInfoConnString = configuration["BalancesInfoConnString"];
+            extendedConfig.CoinAdapterAddress = configuration["CoinAdapterAddress"];
 
             return extendedConfig;
         }
@@ -348,5 +449,7 @@ namespace CashinReportGenerator
     {
         public string ClientPersonalInfoConnString { get; set; }
         public string EthAssetId { get; set; }
+        public string BalancesInfoConnString { get; set; }
+        public string CoinAdapterAddress { get; set; }
     }
 }

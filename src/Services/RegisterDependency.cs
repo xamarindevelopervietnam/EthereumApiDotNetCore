@@ -84,7 +84,7 @@ namespace Services
             services.AddSingleton<Web3>((provider) =>
             {
                 var baseSettings = provider.GetService<IBaseSettings>();
-                var web3 = new Web3("https://mainnet.infura.io/1n2jQpjhc0M4NzYk1Flx");
+                var web3 = new Web3(baseSettings.EthereumUrl);
 
                 return web3;
             });

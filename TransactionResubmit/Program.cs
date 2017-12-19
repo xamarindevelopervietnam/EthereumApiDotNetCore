@@ -6,6 +6,7 @@ using Core.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Nethereum.RPC.Eth.DTOs;
+using Nethereum.Util;
 using Nethereum.Web3;
 using Newtonsoft.Json;
 using RabbitMQ;
@@ -123,6 +124,7 @@ namespace TransactionResubmit
             try
             {
                 Console.WriteLine("Are you sure?: Y/N");
+                var addressUtil = new AddressUtil();
                 var input = Console.ReadLine();
                 if (input.ToLower() != "y")
                 {
@@ -140,7 +142,9 @@ namespace TransactionResubmit
                     {
                         try
                         {
+                            var userAddress = addressUtil.ConvertToChecksumAddress(item.UserAddress);
                             repository.DeleteAsync(item.UserAddress, item.TransferContractAddress).Wait();
+                            repository.DeleteAsync(userAddress, item.TransferContractAddress).Wait();
                             break;
                         }
                         catch (Exception e)

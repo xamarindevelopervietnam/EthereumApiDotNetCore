@@ -11,6 +11,7 @@ namespace Services
 {
     public interface IEthereumTransactionService
     {
+        Task<bool> IsTransactionExecuted(string hash);
         Task<bool> IsTransactionInPool(string transactionHash);
         Task<bool> IsTransactionExecuted(string hash, int gasSended);
         Task<TransactionReceipt> GetTransactionReceipt(string transaction);
@@ -36,6 +37,21 @@ namespace Services
                 return false;
 
             if (receipt.GasUsed.Value != new Nethereum.Hex.HexTypes.HexBigInteger(gasSended).Value)
+                return true;
+
+            return false;
+        }
+
+        public async Task<bool> IsTransactionExecuted(string hash)
+        {
+            var receipt = await GetTransactionReceipt(hash);
+
+            if (receipt == null)
+                return false;
+
+            var transaction = await _client.Eth.Transactions.GetTransactionByHash.SendRequestAsync(hash);
+
+            if (receipt.GasUsed.Value != transaction.Gas.Value)
                 return true;
 
             return false;

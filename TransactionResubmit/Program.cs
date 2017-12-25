@@ -309,7 +309,7 @@ namespace TransactionResubmit
                 {
                     foreach (var @event in events)
                     {
-                        if (@event != null && !trService.IsTransactionExecuted(@event.TransactionHash, Constants.GasForCoinTransaction).Result)
+                        if (@event != null && !trService.IsTransactionExecuted(@event.TransactionHash).Result)
                         {
                             Console.WriteLine($"OMAAAGAD! Error in Transaction: {@event.TransactionHash} {@event.OperationId}");
 

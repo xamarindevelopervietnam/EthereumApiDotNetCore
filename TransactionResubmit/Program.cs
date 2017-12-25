@@ -70,6 +70,8 @@ namespace TransactionResubmit
             Console.WriteLine($"Type 9 to REMOVE DUPLICATE user transfer wallet locks");
             Console.WriteLine($"Type 10 to move from pending-poison to processing");
             Console.WriteLine($"Type 12 remove UserTransferWallet all enties");
+            Console.WriteLine($"Type 13 Resubmit PublishedCoinEvents WhichFailed");
+            
             var command = "";
 
             do
@@ -109,6 +111,9 @@ namespace TransactionResubmit
                         break;
                     case "12":
                         RemoveUserTransferWallet();
+                        break;
+                    case "13":
+                        ResubmittPublishedCoinEventsWhichFailed();
                         break;
                     default:
                         break;
@@ -270,6 +275,53 @@ namespace TransactionResubmit
                                 OperationId = "",
                                 LastError = "FROM_CONSOLE_CASHIN",
                                 PutDateTime = DateTime.UtcNow })).Wait();
+                        }
+                    }
+                }
+
+                Console.WriteLine("All Processed");
+            }
+            catch (Exception e)
+            {
+
+            }
+        }
+
+        private static void ResubmittPublishedCoinEventsWhichFailed()
+        {
+            try
+            {
+                Console.WriteLine("Are you sure?: Y/N");
+                var input = Console.ReadLine();
+                if (input.ToLower() != "y")
+                {
+                    Console.WriteLine("Cancel");
+                    return;
+                }
+                Console.WriteLine("Started");
+
+                var queueFactory = ServiceProvider.GetService<IQueueFactory>();
+                var queue = queueFactory.Build(Constants.PendingOperationsQueue);
+                var coinEventRepo = ServiceProvider.GetService<ICoinEventRepository>();
+                var trService = ServiceProvider.GetService<IEthereumTransactionService>();
+                var events = coinEventRepo.GetAll().Result.Where(x => !string.IsNullOrEmpty(x.OperationId) && x.CoinEventType == CoinEventType.TransferCompleted).ToList();
+                if (events != null)
+                {
+                    foreach (var @event in events)
+                    {
+                        if (@event != null && !trService.IsTransactionExecuted(@event.TransactionHash, Constants.GasForCoinTransaction).Result)
+                        {
+                            Console.WriteLine($"OMAAAGAD! Error in Transaction: {@event.TransactionHash} {@event.OperationId}");
+
+                            queue.PutRawMessageAsync(Newtonsoft.Json.JsonConvert.SerializeObject(new OperationHashMatchMessage()
+                            {
+                                TransactionHash = @event.TransactionHash,
+                                OperationId = @event.OperationId,
+                                LastError = "FROM_CONSOLE_CASHIN",
+                                PutDateTime = DateTime.UtcNow
+                            })).Wait();
+
+                            Console.WriteLine("Sent to queue");
                         }
                     }
                 }

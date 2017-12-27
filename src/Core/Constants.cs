@@ -84,9 +84,11 @@ namespace Core
         public const string UserTransferWalletTable = "UserTransferWallet";
         public const string ExternalTokenTable = "ExternalToken";
         public const string CoinEventEntityTable = "CoinEventEntity";
+        public const string CoinEventEntityHistoryTable = "CoinEventHistoryEntity";
         public const string UserPaymentHistoryTable = "UserPaymentHistory";
         public const string PendingTransactions = "PendingTransactions";
         public const string PendingOperationsTable = "PendingOperation";
+        public const string PendingOperationsHistoryTable = "PendingOperationsHistory";
         public const string OperationToHashMatchTable = "OperationToHashMatch";
         public const string BlockSyncedTable = "BlockSynced";
         public const string CashInEventTable = "CashInEvent";
@@ -97,6 +99,7 @@ namespace Core
 
         public const string OwnerTable = "Owner";
         public static BigInteger DefaultTransactionGas = 21000;
+        
         public const string Erc20TransferSignature =  "0xa9059cbb";
     }
 

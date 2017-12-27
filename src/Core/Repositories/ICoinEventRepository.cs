@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 namespace Core.Repositories
 {
-
     public interface ICoinEvent
     {
         string OperationId { get; }
@@ -68,5 +67,6 @@ namespace Core.Repositories
         Task InsertOrReplace(ICoinEvent coinEvent);
         Task<ICoinEvent> GetCoinEventById(string operationId);
         Task<IEnumerable<ICoinEvent>> GetAll();
+        Task PutInHistoryAsync(ICoinEvent coinEvent);
     }
 }

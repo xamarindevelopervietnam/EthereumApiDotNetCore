@@ -54,7 +54,10 @@ namespace AzureRepositories
 
             services.AddSingleton<IPendingOperationRepository>(provider => new PendingOperationRepository(
                 new AzureTableStorage<PendingOperationEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.PendingOperationsTable,
-                    provider.GetService<ILog>())));
+                    provider.GetService<ILog>()),
+                new AzureTableStorage<PendingOperationEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.PendingOperationsHistoryTable,
+                    provider.GetService<ILog>())
+                ));
 
             services.AddSingleton<IOperationToHashMatchRepository>(provider => new OperationToHashMatchRepository(
                 new AzureTableStorage<OperationToHashMatchEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.OperationToHashMatchTable,
@@ -83,7 +86,11 @@ namespace AzureRepositories
                 new AzureTableStorage<CoinEventEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.CoinEventEntityTable,
                     provider.GetService<ILog>()),
                 new AzureTableStorage<AzureIndex>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.CoinEventEntityTable,
-                provider.GetService<ILog>())));
+                provider.GetService<ILog>()),
+                    new AzureTableStorage<CoinEventEntity>(settings.Db.DataConnString, 
+                    Constants.StoragePrefix + Constants.CoinEventEntityHistoryTable,
+                    provider.GetService<ILog>())
+                ));
 
             services.AddSingleton<IExternalTokenRepository>(provider => new ExternalTokenRepository(
                 new AzureTableStorage<ExternalTokenEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.ExternalTokenTable,

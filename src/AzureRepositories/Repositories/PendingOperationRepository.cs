@@ -59,10 +59,13 @@ namespace AzureRepositories.Repositories
     public class PendingOperationRepository : IPendingOperationRepository
     {
         private readonly INoSQLTableStorage<PendingOperationEntity> _table;
+        private readonly INoSQLTableStorage<PendingOperationEntity> _historyTable;
 
-        public PendingOperationRepository(INoSQLTableStorage<PendingOperationEntity> table)
+        public PendingOperationRepository(INoSQLTableStorage<PendingOperationEntity> table,
+            INoSQLTableStorage<PendingOperationEntity> historyTable)
         {
             _table = table;
+            _historyTable = historyTable;
         }
 
         public async Task<IPendingOperation> GetOperation(string operationId)
@@ -77,6 +80,19 @@ namespace AzureRepositories.Repositories
             var entity = PendingOperationEntity.Create(pendingOp);
 
             await _table.InsertOrReplaceAsync(entity);
+        }
+
+        public async Task MoveOperationToHistoryAsync(string operationId)
+        {
+            var match = await _table.GetDataAsync(PendingOperationEntity.GetPartitionKey(), operationId);
+
+            if (match == null)
+            {
+                return;
+            }
+
+            await _historyTable.InsertOrReplaceAsync(match);
+            await _table.DeleteIfExistAsync(PendingOperationEntity.GetPartitionKey(), operationId);
         }
 
         public Task ProcessAllAsync(Func<IEnumerable<IPendingOperation>, Task> processAction)

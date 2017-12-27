@@ -71,7 +71,8 @@ namespace TransactionResubmit
             Console.WriteLine($"Type 10 to move from pending-poison to processing");
             Console.WriteLine($"Type 12 remove UserTransferWallet all enties");
             Console.WriteLine($"Type 13 Resubmit PublishedCoinEvents WhichFailed");
-            
+            Console.WriteLine($"Type 14 Put Garbage in History");
+
             var command = "";
 
             do
@@ -114,6 +115,9 @@ namespace TransactionResubmit
                         break;
                     case "13":
                         ResubmittPublishedCoinEventsWhichFailed();
+                        break;
+                    case "14":
+                        PutInHistoryFailedCashouts();
                         break;
                     default:
                         break;
@@ -275,6 +279,61 @@ namespace TransactionResubmit
                                 OperationId = "",
                                 LastError = "FROM_CONSOLE_CASHIN",
                                 PutDateTime = DateTime.UtcNow })).Wait();
+                        }
+                    }
+                }
+
+                Console.WriteLine("All Processed");
+            }
+            catch (Exception e)
+            {
+
+            }
+        }
+
+        private static void PutInHistoryFailedCashouts()
+        {
+            try
+            {
+                Console.WriteLine("Are you sure?: Y/N");
+                var input = Console.ReadLine();
+                if (input.ToLower() != "y")
+                {
+                    Console.WriteLine("Cancel");
+                    return;
+                }
+                Console.WriteLine("Started");
+
+                var currentDate = DateTime.UtcNow;
+                var queueFactory = ServiceProvider.GetService<IQueueFactory>();
+                var queue = queueFactory.Build(Constants.PendingOperationsQueue);
+                var coinEventRepo = ServiceProvider.GetService<ICoinEventRepository>();
+                var pendingOperationRepo= ServiceProvider.GetService<IPendingOperationRepository>();
+                var trService = ServiceProvider.GetService<IEthereumTransactionService>();
+                var events = coinEventRepo.GetAll().Result.Where(x => !string.IsNullOrEmpty(x.OperationId)
+                && (x.CoinEventType == CoinEventType.CashinStarted || 
+                x.CoinEventType == CoinEventType.TransferStarted || 
+                x.CoinEventType == CoinEventType.CashinStarted)
+                && currentDate - x.EventTime > TimeSpan.FromDays(7)).ToList();
+                if (events != null)
+                {
+                    foreach (var @event in events)
+                    {
+                        string id = $"{@event.TransactionHash} {@event.OperationId}";
+                        Console.WriteLine($"Checking {id}");
+                        if (@event != null &&
+                            !string.IsNullOrEmpty(@event.TransactionHash) &&
+                            !trService.IsTransactionExecuted(@event.TransactionHash).Result)
+                        {
+                            Console.WriteLine($"OMAAAGAD! : {id}");
+
+                            RetryPolicy.ExecuteAsync(async () => 
+                            {
+                                await pendingOperationRepo.MoveOperationToHistoryAsync(@event.OperationId);
+                                await coinEventRepo.PutInHistoryAsync(@event);
+                            }, 3, 100).Wait();
+
+                            Console.WriteLine($"Put in garbage {id}");
                         }
                     }
                 }

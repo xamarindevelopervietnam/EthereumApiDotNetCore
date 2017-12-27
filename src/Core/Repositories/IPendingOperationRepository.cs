@@ -64,5 +64,6 @@ namespace Core.Repositories
         Task ProcessAllAsync(Func<IEnumerable<IPendingOperation>, Task> processAction);
         Task<IPendingOperation> GetOperation(string operationId);
         Task InsertOrReplace(IPendingOperation coin);
+        Task MoveOperationToHistoryAsync(string operationId);
     }
 }

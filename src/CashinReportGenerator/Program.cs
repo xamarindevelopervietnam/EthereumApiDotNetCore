@@ -84,17 +84,23 @@ namespace CashinReportGenerator
             var bcnRepositoryReader = new BcnClientCredentialsRepository(
                     new AzureTableStorage<BcnCredentialsRecordEntity>(clientPersonalInfoConnString,
                         "BcnClientCredentials", log));
+            var pendingActions = new EthererumPendingActionsRepository(
+                    new AzureTableStorage<EthererumPendingActionEntity>(clientPersonalInfoConnString,
+                        "EthererumPendingActions", log));
             var privateWalletsReader = new PrivateWalletsRepository(
                     new AzureTableStorage<PrivateWalletEntity>(clientPersonalInfoConnString,
                         "PrivateWallets", log));
             var wallets = new WalletsRepository(new AzureTableStorage<WalletEntity>(balancesInfoConnString, "Accounts", log));
-
+            var assetContractService = ServiceProvider.GetService<AssetContractService>();
             var samuraiApi = ServiceProvider.GetService<IEthereumSamuraiApi>();
             var ethPrecision = BigInteger.Pow(10, 18);
             string command = "0";
-
+            var key = new Nethereum.Signer.EthECKey("0x70c6a179aef3aa3c6bb6001b07b2d219b71e5b93dac8baf858bb0cefcb041e3b0c119dd94d7b80");
+            var pub = key.GetPublicAddress();
             Console.WriteLine("Type 1 - to make cashinReport");
             Console.WriteLine("Type 2 - to make balance report");
+            Console.WriteLine("Type 3 - to fill pending actions for users");
+
             Console.WriteLine("Type exit - to quit");
 
             while (command != "exit")
@@ -103,11 +109,30 @@ namespace CashinReportGenerator
 
                 switch (command)
                 {
+                    case "3":
+                        bcnRepositoryReader.ProcessAllAsync(async (wallet) =>
+                        {
+                            if (wallet.AssetId == ethAssetId)
+                            {
+                                BigInteger balanceOnAdapter = 0;
+                                await RetryPolicy.ExecuteAsync(async () =>
+                                {
+                                    balanceOnAdapter = await assetContractService.GetBalance(coinAdapterAddress, wallet.Address);
+                                    if (balanceOnAdapter > 0)
+                                    {
+                                        await pendingActions.CreateAsync(wallet.ClientId, Guid.NewGuid().ToString());
+                                        Console.WriteLine($"ClientId- {wallet.ClientId} added");
+                                    }
+                                }, 3, 100);
+                            }
+
+                            Console.WriteLine($"ClientId- {wallet.ClientId} processed");
+                        }).Wait();
+                            break;
                     case "1":
                         MakeCsvCashinReport(ethAssetId, bcnRepositoryReader, privateWalletsReader, samuraiApi);
                         break;
                     case "2":
-                        var assetContractService = ServiceProvider.GetService<AssetContractService>();
                         using (var streamWriter = new StreamWriter("BalancesReport"))
                         using (var csvWriter = new CsvHelper.CsvWriter(streamWriter, false))
                         {

@@ -77,6 +77,7 @@ namespace CashinReportGenerator
 
             string coinAdapterAddress = settings.CoinAdapterAddress;
             string balancesInfoConnString = settings.BalancesInfoConnString;
+            string bitCoinQueueConnectionString = settings.BitCoinQueueConnectionString;
             string clientPersonalInfoConnString = settings.ClientPersonalInfoConnString;
             string ethAssetId = settings.EthAssetId;
 
@@ -85,7 +86,7 @@ namespace CashinReportGenerator
                     new AzureTableStorage<BcnCredentialsRecordEntity>(clientPersonalInfoConnString,
                         "BcnClientCredentials", log));
             var pendingActions = new EthererumPendingActionsRepository(
-                    new AzureTableStorage<EthererumPendingActionEntity>(clientPersonalInfoConnString,
+                    new AzureTableStorage<EthererumPendingActionEntity>(bitCoinQueueConnectionString,
                         "EthererumPendingActions", log));
             var privateWalletsReader = new PrivateWalletsRepository(
                     new AzureTableStorage<PrivateWalletEntity>(clientPersonalInfoConnString,
@@ -384,6 +385,7 @@ namespace CashinReportGenerator
             extendedConfig.ClientPersonalInfoConnString = configuration["ClientPersonalInfoConnString"];
             extendedConfig.BalancesInfoConnString = configuration["BalancesInfoConnString"];
             extendedConfig.CoinAdapterAddress = configuration["CoinAdapterAddress"];
+            extendedConfig.BitCoinQueueConnectionString = configuration["BitCoinQueueConnectionString"];
 
             return extendedConfig;
         }
@@ -476,5 +478,6 @@ namespace CashinReportGenerator
         public string EthAssetId { get; set; }
         public string BalancesInfoConnString { get; set; }
         public string CoinAdapterAddress { get; set; }
+        public string BitCoinQueueConnectionString { get; set; }
     }
 }

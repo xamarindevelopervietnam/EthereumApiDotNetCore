@@ -87,17 +87,17 @@ namespace ContractBuilder
             //});
 
             var web3 = ServiceProvider.GetService<Web3>();
-            var contract = web3.Eth.GetContract(GetCurrentSettings().EthereumCore.ERC20ABI, "0x0f513ffb4926ff82d7f60a05069047aca295c413");
-            var function = contract.GetFunction("transfer");
-            var gas = function.EstimateGasAsync("0x2c0975b493c116f7c2dd9c12bcaed0f89b657d70", 
-                new HexBigInteger(500000),
-                new HexBigInteger(0), 
-                "0xa9e9322e9d1f74cdbc109e818e488f45b37e20a5", 
-                BigInteger.Parse("10000000000000000")).Result;
+            //var contract = web3.Eth.GetContract(GetCurrentSettings().EthereumCore.ERC20ABI, "0x0f513ffb4926ff82d7f60a05069047aca295c413");
+            //var function = contract.GetFunction("transfer");
+            //var gas = function.EstimateGasAsync("0x2c0975b493c116f7c2dd9c12bcaed0f89b657d70", 
+            //    new HexBigInteger(500000),
+            //    new HexBigInteger(0), 
+            //    "0xa9e9322e9d1f74cdbc109e818e488f45b37e20a5", 
+            //    BigInteger.Parse("10000000000000000")).Result;
 
-            //var service = ServiceProvider.GetService<IErcInterfaceService>();
-            //service.Transfer("0x5adbf411faf2595698d80b7f93d570dd16d7f4b2", settings.EthereumCore.EthereumMainAccount,
-            //    "0xae4d8b0c887508750ddb6b32752a82431941e2e7", System.Numerics.BigInteger.Parse("10000000000000000000")).Wait();
+            var service = ServiceProvider.GetService<IErcInterfaceService>();
+            var hash = service.Transfer("0x861c5729341fde88a0e616c22a25f68810eb99ca", "0x6da4b01c3a88d67fddc2cb8b5505723409114b45",
+                "0x2d0c33b9debc05a585d3b28f9188447c56e6519a", System.Numerics.BigInteger.Parse("2700")).Result;
             //var paymentService = ServiceProvider.GetService<IPaymentService>();
             //    string result = paymentService.SendEthereum(settings.EthereumMainAccount, 
             //    "0xbb0a9c08030898cdaf1f28633f0d3c8556155482", new System.Numerics.BigInteger(5000000000000000)).Result;
@@ -561,8 +561,8 @@ namespace ContractBuilder
             try
             {
                 var settings = GetCurrentSettings();
-                var abi = GetFileContent("Lkk2yToken.abi");
-                var bytecode = GetFileContent("Lkk2yToken.bin");
+                var abi = GetFileContent("EmissiveTokenTemplate.abi");
+                var bytecode = GetFileContent("EmissiveTokenTemplate.bin");
                 var web3 = ServiceProvider.GetService<Web3>();
                 string contractAddress = await ServiceProvider.GetService<IContractService>()
                     .CreateContract(abi, bytecode);
@@ -573,6 +573,16 @@ namespace ContractBuilder
                     var service = ServiceProvider.GetService<IErcInterfaceService>();
                     string hash = service.Transfer(contractAddress, settings.EthereumCore.EthereumMainAccount,
                         "0xae4d8b0c887508750ddb6b32752a82431941e2e7", System.Numerics.BigInteger.Parse("10000000000000000000")).Result;
+                }
+
+                {
+                    var function = contract.GetFunction("changeIssuer");
+
+                    string trHash = await function.SendTransactionAsync(settings.EthereumCore.EthereumMainAccount, settings.EthereumCore.EthereumMainAccount);
+
+                    var service = ServiceProvider.GetService<IErcInterfaceService>();
+                    string hash = service.Transfer(contractAddress, settings.EthereumCore.EthereumMainAccount,
+                        "0xae4d8b0c887508750ddb6b32752a82431941e2e7", System.Numerics.BigInteger.Parse("66000000000000000000")).Result;
                 }
 
                 {

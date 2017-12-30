@@ -250,8 +250,8 @@ namespace Tests
         [TestMethod]
         public async Task SignOld()
         {
-            string hex = "";
-            string privateKey = "";
+            string hex = "e0dee0b9e4b729450e0f873a77ae68b7487021d9257baedbc3afd5b7de50c6bc";
+            string privateKey = "5b98a88a4a542ad6d76784b172db9e6214eaf8fa5a2dbe7d45746f02dfd81fb83638f4ed8c865918c921ae6419848ec1881582fa689bcd4fa6a73b21ae7886a7";
 
             var secret = new EthECKey(privateKey); ;
             var hash = hex.HexToByteArray();

@@ -16,6 +16,10 @@ contract ERC20Token is ERC20Interface, SafeMath {
     contractOwner = _contractOwner;
   }
 
+  function changeOwner (address _newOwner) onlyowner {
+    contractOwner = _newOwner;
+  }
+
   function balanceOf (address _owner) constant returns (uint256 balance) {
     return accounts [_owner];
   }

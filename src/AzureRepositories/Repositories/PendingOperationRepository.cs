@@ -95,9 +95,9 @@ namespace AzureRepositories.Repositories
             await _table.DeleteIfExistAsync(PendingOperationEntity.GetPartitionKey(), operationId);
         }
 
-        public Task ProcessAllAsync(Func<IEnumerable<IPendingOperation>, Task> processAction)
+        public async Task ProcessAllAsync(Func<IEnumerable<IPendingOperation>, Task> processAction)
         {
-            throw new NotImplementedException();
+            await _table.GetDataByChunksAsync(processAction);
         }
     }
 }

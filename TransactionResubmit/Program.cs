@@ -37,6 +37,7 @@ namespace TransactionResubmit
 
             IServiceCollection collection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             collection.AddSingleton<IBaseSettings>(settings.EthereumCore);
+            collection.AddSingleton(settings.Ethereum);
             collection.AddSingleton<ISlackNotificationSettings>(settings.SlackNotifications);
 
             RegisterReposExt.RegisterAzureLogs(collection, settings.EthereumCore, "");
@@ -58,7 +59,7 @@ namespace TransactionResubmit
             {
                 Console.WriteLine($"Rpc does not work at all! {e.Message}");
             }
-                Console.WriteLine($"Type 0 to exit");
+            Console.WriteLine($"Type 0 to exit");
             Console.WriteLine($"Type 1 to SHOW pending Transactions");
             Console.WriteLine($"Type 2 to REPEAT all operation without hash");
             Console.WriteLine($"Type 3 to CHECK pending operations");
@@ -72,6 +73,7 @@ namespace TransactionResubmit
             Console.WriteLine($"Type 12 remove UserTransferWallet all enties");
             Console.WriteLine($"Type 13 Resubmit PublishedCoinEvents WhichFailed");
             Console.WriteLine($"Type 14 Put Garbage in History");
+            Console.WriteLine($"Type 15 send cashout from hotwallet");
 
             var command = "";
 
@@ -118,6 +120,9 @@ namespace TransactionResubmit
                         break;
                     case "14":
                         PutInHistoryFailedCashouts();
+                        break;
+                    case "15":
+                        ResendCashoutFromHotwallet();
                         break;
                     default:
                         break;
@@ -278,10 +283,86 @@ namespace TransactionResubmit
                                 TransactionHash = @event.TransactionHash,
                                 OperationId = "",
                                 LastError = "FROM_CONSOLE_CASHIN",
-                                PutDateTime = DateTime.UtcNow })).Wait();
+                                PutDateTime = DateTime.UtcNow
+                            })).Wait();
                         }
                     }
                 }
+
+                Console.WriteLine("All Processed");
+            }
+            catch (Exception e)
+            {
+
+            }
+        }
+
+        private static void ResendCashoutFromHotwallet()
+        {
+            try
+            {
+                Console.WriteLine("Are you sure?: Y/N");
+                var input = Console.ReadLine();
+                if (input.ToLower() != "y")
+                {
+                    Console.WriteLine("Cancel");
+                    return;
+                }
+                Console.WriteLine("Started");
+
+                var hotWalletSettings = ServiceProvider.GetService<HotWalletSettings>();
+                var queueFactory = ServiceProvider.GetService<IQueueFactory>();
+                var coinEventRepo = ServiceProvider.GetService<ICoinEventRepository>();
+                var pendingOperationRepo = ServiceProvider.GetService<IPendingOperationRepository>();
+                var queuePending = queueFactory.Build(Constants.PendingOperationsQueue);
+
+                var currentDate = DateTime.UtcNow;
+                var trService = ServiceProvider.GetService<IEthereumTransactionService>();
+                var events = coinEventRepo.GetAll().Result.Where(x => !string.IsNullOrEmpty(x.OperationId)
+                && (x.CoinEventType == CoinEventType.CashoutStarted || x.CoinEventType == CoinEventType.CashoutCompleted))
+                .ToLookup(x => x.OperationId);
+
+                pendingOperationRepo.ProcessAllAsync(async (operations) =>
+                {
+                    foreach (var operation in operations)
+                    {
+                        bool cashoutIsCompleted = false;
+                        Console.WriteLine($"Operation {operation.OperationId} is {operation.OperationType}");
+                        if (operation.OperationType == OperationTypes.Cashout)
+                        {
+                            Console.WriteLine("Checking cashout");
+                            var cashouts = events[operation.OperationId];
+                            cashoutIsCompleted = cashouts != null ?
+                            cashouts.Any(x => x.CoinEventType == CoinEventType.CashoutCompleted) : false;
+
+                            Console.WriteLine($"Cashout is in {cashoutIsCompleted} state");
+                            if (!cashoutIsCompleted)
+                            {
+                                Console.WriteLine("REWRITING CASHOUT");
+                                await RetryPolicy.ExecuteAsync(async () =>
+                                {
+                                    operation.FromAddress = hotWalletSettings.HotwalletAddress;
+                                    operation.SignFrom = "";
+
+                                    await pendingOperationRepo.InsertOrReplace(operation);
+                                    await queuePending.PutRawMessageAsync(Newtonsoft.Json.JsonConvert.SerializeObject(new OperationHashMatchMessage()
+                                    {
+                                        OperationId = operation.OperationId,
+                                        LastError = "Old cashout before trust (rewritten to work as trust cashout)",
+                                        PutDateTime = DateTime.UtcNow
+                                    }));
+                                }, 3, 100);
+
+                                Console.WriteLine("Cashout is rewritten");
+                            }
+                            else
+                            {
+                                Console.WriteLine("Cashout is ok skipping");
+                            }
+                        }
+                        Console.WriteLine();
+                    }
+                }).Wait();
 
                 Console.WriteLine("All Processed");
             }
@@ -308,12 +389,12 @@ namespace TransactionResubmit
                 var queueFactory = ServiceProvider.GetService<IQueueFactory>();
                 var queue = queueFactory.Build(Constants.PendingOperationsQueue);
                 var coinEventRepo = ServiceProvider.GetService<ICoinEventRepository>();
-                var pendingOperationRepo= ServiceProvider.GetService<IPendingOperationRepository>();
+                var pendingOperationRepo = ServiceProvider.GetService<IPendingOperationRepository>();
                 var trService = ServiceProvider.GetService<IEthereumTransactionService>();
                 var events = coinEventRepo.GetAll().Result.Where(x => !string.IsNullOrEmpty(x.OperationId)
-                && (x.CoinEventType == CoinEventType.CashinStarted || 
-                x.CoinEventType == CoinEventType.TransferStarted || 
-                x.CoinEventType == CoinEventType.CashinStarted)
+                && (x.CoinEventType == CoinEventType.CashinStarted ||
+                x.CoinEventType == CoinEventType.TransferStarted ||
+                x.CoinEventType == CoinEventType.CashoutStarted)
                 && currentDate - x.EventTime > TimeSpan.FromDays(7)).ToList();
                 if (events != null)
                 {
@@ -327,7 +408,7 @@ namespace TransactionResubmit
                         {
                             Console.WriteLine($"OMAAAGAD! : {id}");
 
-                            RetryPolicy.ExecuteAsync(async () => 
+                            RetryPolicy.ExecuteAsync(async () =>
                             {
                                 await pendingOperationRepo.MoveOperationToHistoryAsync(@event.OperationId);
                                 await coinEventRepo.PutInHistoryAsync(@event);
@@ -475,7 +556,7 @@ namespace TransactionResubmit
                                     }
                                 }
                             }
-                            
+
                         }
                     }
 

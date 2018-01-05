@@ -161,33 +161,40 @@ namespace TransactionResubmit
                 ISignatureService signService = ServiceProvider.GetService<ISignatureService>();
 
                 Console.WriteLine("Preparation Completed");
-                for (BigInteger nonce = 144619; nonce <= 144638; nonce++)
+                for (BigInteger nonce = 144639; nonce <= 144649; nonce++)
                 {
-                    Console.WriteLine("Nonce " + nonce.ToString());
-                    var ethTransaction = new BusinessModels.PrivateWallet.EthTransaction()
+                    try
                     {
-                        FromAddress = baseSettings.EthereumMainAccount,
-                        GasAmount = 22000,
-                        GasPrice = 120000000000,
-                        ToAddress = wrapper.Ethereum.HotwalletAddress,
-                        Value = 1
-                    };
+                        Console.WriteLine("Nonce " + nonce.ToString());
+                        var ethTransaction = new BusinessModels.PrivateWallet.EthTransaction()
+                        {
+                            FromAddress = baseSettings.EthereumMainAccount,
+                            GasAmount = 22000,
+                            GasPrice = 150000000000,
+                            ToAddress = wrapper.Ethereum.HotwalletAddress,
+                            Value = 1
+                        };
 
-                    Console.WriteLine("Creating Transaction");
-                    string from = ethTransaction.FromAddress;
+                        Console.WriteLine("Creating Transaction");
+                        string from = ethTransaction.FromAddress;
 
-                    var gas = new Nethereum.Hex.HexTypes.HexBigInteger(ethTransaction.GasAmount);
-                    var gasPrice = new Nethereum.Hex.HexTypes.HexBigInteger(ethTransaction.GasPrice);
-                    var to = ethTransaction.ToAddress;
-                    var value = new Nethereum.Hex.HexTypes.HexBigInteger(ethTransaction.Value);
-                    var tr = new Nethereum.Signer.Transaction(to, value, nonce, gasPrice, gas);
-                    var hex1 = tr.GetRLPEncoded().ToHex();
+                        var gas = new Nethereum.Hex.HexTypes.HexBigInteger(ethTransaction.GasAmount);
+                        var gasPrice = new Nethereum.Hex.HexTypes.HexBigInteger(ethTransaction.GasPrice);
+                        var to = ethTransaction.ToAddress;
+                        var value = new Nethereum.Hex.HexTypes.HexBigInteger(ethTransaction.Value);
+                        var tr = new Nethereum.Signer.Transaction(to, value, nonce, gasPrice, gas);
+                        var hex1 = tr.GetRLPEncoded().ToHex();
 
-                    Console.WriteLine("Signing");
-                    var signed = signService.SignRawTransactionAsync(baseSettings.EthereumMainAccount, hex1).Result;
-                    Console.WriteLine("Sending");
-                    string hex = priwateWalletService.SubmitSignedTransaction(baseSettings.EthereumMainAccount, signed).Result;
-                    Console.WriteLine(hex);
+                        Console.WriteLine("Signing");
+                        var signed = signService.SignRawTransactionAsync(baseSettings.EthereumMainAccount, hex1).Result;
+                        Console.WriteLine("Sending");
+                        string hex = priwateWalletService.SubmitSignedTransaction(baseSettings.EthereumMainAccount, signed).Result;
+                        Console.WriteLine(hex);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message + "Error");
+                    }
                 }
                 
 

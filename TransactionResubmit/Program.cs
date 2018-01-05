@@ -160,6 +160,7 @@ namespace TransactionResubmit
                 var priwateWalletService = ServiceProvider.GetService<IPrivateWalletService>();
                 ISignatureService signService = ServiceProvider.GetService<ISignatureService>();
 
+                Console.WriteLine("Preparation Completed");
                 var ethTransaction = new BusinessModels.PrivateWallet.EthTransaction()
                 {
                     FromAddress = baseSettings.EthereumMainAccount,
@@ -168,6 +169,8 @@ namespace TransactionResubmit
                     ToAddress = wrapper.Ethereum.HotwalletAddress,
                     Value = 1
                 };
+
+                Console.WriteLine("Creating Transaction");
                 string from = ethTransaction.FromAddress;
 
                 var gas = new Nethereum.Hex.HexTypes.HexBigInteger(ethTransaction.GasAmount);
@@ -186,8 +189,9 @@ namespace TransactionResubmit
                 //    ToAddress = wrapper.Ethereum.HotwalletAddress,
                 //    Value = 1
                 //}, false).Result;
+                Console.WriteLine("Signing");
                 var signed = signService.SignRawTransactionAsync(baseSettings.EthereumMainAccount, hex1).Result;
-
+                Console.WriteLine("Sending");
                 string hex = priwateWalletService.SubmitSignedTransaction(baseSettings.EthereumMainAccount, signed).Result;
                 Console.WriteLine(hex);
 
@@ -195,6 +199,7 @@ namespace TransactionResubmit
             }
             catch (Exception e)
             {
+                Console.WriteLine(e.Message + "Error" + e.StackTrace);
             }
         }
 

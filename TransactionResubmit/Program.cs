@@ -5,6 +5,7 @@ using Core.Repositories;
 using Core.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Util;
 using Nethereum.Web3;
@@ -158,15 +159,34 @@ namespace TransactionResubmit
                 var baseSettings = ServiceProvider.GetService<IBaseSettings>();
                 var priwateWalletService = ServiceProvider.GetService<IPrivateWalletService>();
                 ISignatureService signService = ServiceProvider.GetService<ISignatureService>();
-                string transaction = priwateWalletService.GetTransactionForSigning(new BusinessModels.PrivateWallet.EthTransaction()
+
+                var ethTransaction = new BusinessModels.PrivateWallet.EthTransaction()
                 {
                     FromAddress = baseSettings.EthereumMainAccount,
                     GasAmount = 22000,
                     GasPrice = 120000000000,
                     ToAddress = wrapper.Ethereum.HotwalletAddress,
                     Value = 1
-                }, false).Result;
-                var signed = signService.SignRawTransactionAsync(baseSettings.EthereumMainAccount, transaction).Result;
+                };
+                string from = ethTransaction.FromAddress;
+
+                var gas = new Nethereum.Hex.HexTypes.HexBigInteger(ethTransaction.GasAmount);
+                var gasPrice = new Nethereum.Hex.HexTypes.HexBigInteger(ethTransaction.GasPrice);
+                var nonce = 144618;
+                var to = ethTransaction.ToAddress;
+                var value = new Nethereum.Hex.HexTypes.HexBigInteger(ethTransaction.Value);
+                var tr = new Nethereum.Signer.Transaction(to, value, nonce, gasPrice, gas);
+                var hex1 = tr.GetRLPEncoded().ToHex();
+
+                //string transaction = priwateWalletService.GetTransactionForSigning(new BusinessModels.PrivateWallet.EthTransaction()
+                //{
+                //    FromAddress = baseSettings.EthereumMainAccount,
+                //    GasAmount = 22000,
+                //    GasPrice = 120000000000,
+                //    ToAddress = wrapper.Ethereum.HotwalletAddress,
+                //    Value = 1
+                //}, false).Result;
+                var signed = signService.SignRawTransactionAsync(baseSettings.EthereumMainAccount, hex1).Result;
 
                 string hex = priwateWalletService.SubmitSignedTransaction(baseSettings.EthereumMainAccount, signed).Result;
                 Console.WriteLine(hex);

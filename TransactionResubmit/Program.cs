@@ -161,7 +161,7 @@ namespace TransactionResubmit
                 ISignatureService signService = ServiceProvider.GetService<ISignatureService>();
 
                 Console.WriteLine("Preparation Completed");
-                for (BigInteger nonce = 144639; nonce <= 144649; nonce++)
+                for (BigInteger nonce = 144639; nonce <= 144644; nonce++)
                 {
                     try
                     {
@@ -170,7 +170,7 @@ namespace TransactionResubmit
                         {
                             FromAddress = baseSettings.EthereumMainAccount,
                             GasAmount = 22000,
-                            GasPrice = 150000000000,
+                            GasPrice = 270000000000,
                             ToAddress = wrapper.Ethereum.HotwalletAddress,
                             Value = 1
                         };

@@ -14,6 +14,8 @@ using Services;
 using Services.Coins;
 using Services.Coins.Models;
 using Services.New.Models;
+using Services.PrivateWallet;
+using Services.Signature;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -36,6 +38,7 @@ namespace TransactionResubmit
             var settings = GetCurrentSettings();
 
             IServiceCollection collection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            collection.AddSingleton(settings);
             collection.AddSingleton<IBaseSettings>(settings.EthereumCore);
             collection.AddSingleton(settings.Ethereum);
             collection.AddSingleton<ISlackNotificationSettings>(settings.SlackNotifications);
@@ -74,6 +77,7 @@ namespace TransactionResubmit
             Console.WriteLine($"Type 13 Resubmit PublishedCoinEvents WhichFailed");
             Console.WriteLine($"Type 14 Put Garbage in History");
             Console.WriteLine($"Type 15 send cashout from hotwallet");
+            Console.WriteLine($"Type 16 rewrite current transactions");
 
             var command = "";
 
@@ -124,6 +128,9 @@ namespace TransactionResubmit
                     case "15":
                         ResendCashoutFromHotwallet();
                         break;
+                    case "16":
+                        RewriteTransaction();
+                        break;
                     default:
                         break;
                 }
@@ -131,6 +138,44 @@ namespace TransactionResubmit
             while (command != "0");
 
             Console.WriteLine("Exited");
+        }
+
+        private static void RewriteTransaction()
+        {
+            try
+            {
+                Console.WriteLine("Are you sure?: Y/N");
+                var addressUtil = new AddressUtil();
+                var input = Console.ReadLine();
+                if (input.ToLower() != "y")
+                {
+                    Console.WriteLine("Cancel");
+                    return;
+                }
+                Console.WriteLine("Started");
+
+                var wrapper = ServiceProvider.GetService<SettingsWrapper>();
+                var baseSettings = ServiceProvider.GetService<IBaseSettings>();
+                var priwateWalletService = ServiceProvider.GetService<IPrivateWalletService>();
+                ISignatureService signService = ServiceProvider.GetService<ISignatureService>();
+                string transaction = priwateWalletService.GetTransactionForSigning(new BusinessModels.PrivateWallet.EthTransaction()
+                {
+                    FromAddress = baseSettings.EthereumMainAccount,
+                    GasAmount = 22000,
+                    GasPrice = 120000000000,
+                    ToAddress = wrapper.Ethereum.HotwalletAddress,
+                    Value = 1
+                }, false).Result;
+                var signed = signService.SignRawTransactionAsync(baseSettings.EthereumMainAccount, transaction).Result;
+
+                string hex = priwateWalletService.SubmitSignedTransaction(baseSettings.EthereumMainAccount, signed).Result;
+                Console.WriteLine(hex);
+
+                Console.WriteLine("All Processed");
+            }
+            catch (Exception e)
+            {
+            }
         }
 
         private static void RemoveUserTransferWallet()

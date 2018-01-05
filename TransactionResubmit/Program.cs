@@ -161,7 +161,7 @@ namespace TransactionResubmit
                 ISignatureService signService = ServiceProvider.GetService<ISignatureService>();
 
                 Console.WriteLine("Preparation Completed");
-                for (BigInteger nonce = 144619; nonce < 144638; nonce++)
+                for (BigInteger nonce = 144619; nonce <= 144638; nonce++)
                 {
                     Console.WriteLine("Nonce " + nonce.ToString());
                     var ethTransaction = new BusinessModels.PrivateWallet.EthTransaction()

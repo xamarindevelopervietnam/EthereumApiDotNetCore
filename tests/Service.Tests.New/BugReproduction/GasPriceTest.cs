@@ -16,6 +16,7 @@ using Nethereum.Web3;
 using Nethereum.RPC.Eth.DTOs;
 using Core.Settings;
 using Services.Signature;
+using Core;
 
 namespace Service.Tests.BugReproduction
 {
@@ -33,8 +34,10 @@ namespace Service.Tests.BugReproduction
             var nonceCalculator = Config.Services.GetService<INonceCalculator>();
             var transactionRouter = Config.Services.GetService<ITransactionRouter>();
             var gasPriceRepository = Config.Services.GetService<IGasPriceRepository>();
+            var queueFactory = Config.Services.GetService<IQueueFactory>();
+            var transactionInfoRepository = Config.Services.GetService<ITransactionInfoRepository>();
 
-            _transactionManager = new LykkeSignedTransactionManager(baseSettings, nonceCalculator, signatureApi, transactionRouter, web3, gasPriceRepository);
+            _transactionManager = new LykkeSignedTransactionManager(baseSettings, nonceCalculator, signatureApi, transactionRouter, web3, gasPriceRepository, queueFactory,transactionInfoRepository);
         }
 
         [TestMethod]

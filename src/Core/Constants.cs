@@ -25,6 +25,8 @@ namespace Core
         public const string HotWalletTransactionMonitoringQueue = "hotwallet-transaction-monitoring-queue";
         public const string Erc20DepositContractPoolQueue = "erc20-deposit-contract-pool-queue";
         public const string Erc20DepositCashinTransferQueue = "erc20-deposit-cashin-transfer-queue";
+        public const string AddressNonceQueueFor = "address-nonce-queue-";
+        public const string TransactionMonitoringNonceQueue = "nonce-monitoring-queue";
         /// <summary>
         /// Used to internal monitoring of refill transactions
         /// </summary>
@@ -51,6 +53,7 @@ namespace Core
         public const string UserContractManualQueue = "ethereum-user-payment-manual";
 
         //table names
+        public const string TransactionInfoTable = "TransactionInfo";
         public const string MonitoringTable = "Monitoring";
         public const string UserContractsTable = "UserContracts";
         public const string AppSettingsTable = "AppSettings";

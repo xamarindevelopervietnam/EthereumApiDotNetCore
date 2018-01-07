@@ -154,6 +154,10 @@ namespace AzureRepositories
             services.AddSingleton<IGasPriceRepository>(provider => new GasPriceRepository(
                 new AzureTableStorage<GasPriceEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.GasPriceTable,
                     provider.GetService<ILog>())));
+
+            services.AddSingleton<ITransactionInfoRepository>(provider => new TransactionInfoRepository(
+                new AzureTableStorage<TransactionInfoEntity>(settings.Db.DataConnString, Constants.StoragePrefix + Constants.TransactionInfoTable,
+                    provider.GetService<ILog>())));
         }
 
         public static void RegisterAzureQueues(this IServiceCollection services, IBaseSettings settings, ISlackNotificationSettings slackNotificationSettings)

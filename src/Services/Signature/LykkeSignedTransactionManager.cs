@@ -3,7 +3,9 @@ using System.Collections.Concurrent;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
+using AzureStorage.Queue;
 using Core;
+using Core.Messages.Nonce;
 using Core.Repositories;
 using Core.Settings;
 using Nethereum.Hex.HexConvertors.Extensions;
@@ -14,6 +16,7 @@ using Nethereum.RPC.Eth.Transactions;
 using Nethereum.RPC.TransactionManagers;
 using Nethereum.Util;
 using Nethereum.Web3;
+using Newtonsoft.Json;
 using SigningServiceApiCaller;
 using SigningServiceApiCaller.Models;
 
@@ -30,7 +33,9 @@ namespace Services.Signature
         private readonly ITransactionRouter _transactionRouter;
         private readonly Web3 _web3;
         private readonly IGasPriceRepository _gasPriceRepository;
-
+        private readonly IQueueFactory _queueFactory;
+        private readonly IQueueExt _monitoringNonceQueue;
+        private readonly ITransactionInfoRepository _transactionInfoRepository;
 
         public LykkeSignedTransactionManager(
             IBaseSettings baseSettings,
@@ -38,7 +43,9 @@ namespace Services.Signature
             ILykkeSigningAPI signingApi,
             ITransactionRouter transactionRouter,
             Web3 web3,
-            IGasPriceRepository gasPriceRepository)
+            IGasPriceRepository gasPriceRepository,
+            IQueueFactory queueFactory,
+            ITransactionInfoRepository transactionInfoRepository)
         {
             _baseSettings = baseSettings;
             _estimateGas = new EthEstimateGas(web3.Client);
@@ -49,6 +56,9 @@ namespace Services.Signature
             _transactionRouter = transactionRouter;
             _web3 = web3;
             _gasPriceRepository = gasPriceRepository;
+            _queueFactory = queueFactory;
+            _monitoringNonceQueue = _queueFactory.Build(Constants.TransactionMonitoringNonceQueue);
+            _transactionInfoRepository = transactionInfoRepository;
 
             Client = web3.Client;
         }
@@ -122,7 +132,23 @@ namespace Services.Signature
 
                 (gasPrice, gasValue) = await GetGasPriceAndValueAsync(gasPrice, gasValue);
 
-                var nonce = await _nonceCalculator.GetNonceAsync(from, true);
+                HexBigInteger nonce;
+                var queue = _queueFactory.Build(Constants.AddressNonceQueueFor + from);
+                var nonceMessage = await queue.GetRawMessageAsync();
+
+                if (nonceMessage == null)
+                {
+                    nonce = await _nonceCalculator.GetNonceAsync(from, true);
+                } else
+                {
+                    var newMessage = JsonConvert.DeserializeObject<NextNonceForAddressMessage>(nonceMessage.AsString);
+                    await queue.FinishRawMessageAsync(nonceMessage);
+                    var parsedNonce = BigInteger.Parse(newMessage.Nonce);
+
+                    gasPrice = (gasPrice.Value * 11) / 10; // + 10%
+                    nonce = new HexBigInteger(parsedNonce);
+                }
+
                 var transaction = new Nethereum.Signer.Transaction(to, value, nonce.Value, gasPrice.Value, gasValue.Value, data);
                 var signRequest = new EthereumTransactionSignRequest
                 {
@@ -132,6 +158,27 @@ namespace Services.Signature
 
                 var signResponse = await _signingApi.ApiEthereumSignPostAsync(signRequest);
                 var txHash = await _sendRawTransaction.SendRequestAsync(signResponse.SignedTransaction.EnsureHexPrefix());
+
+                #region Put in Monitoring
+
+                await _transactionInfoRepository.SaveAsync(new TransactionInfo()
+                {
+                    Date = DateTime.UtcNow,
+                    From = from,
+                    TransactionHash = txHash,
+                    Nonce = nonce.ToString(),
+                });
+
+                string serializedMonitoringNonce = Newtonsoft.Json.JsonConvert.SerializeObject(new TransactionNonceMonitoringMessage()
+                {
+                    FromAddress = from,
+                    Nonce = nonce.ToString(),
+                    TransactionHash = txHash
+                });
+
+                await _monitoringNonceQueue.PutRawMessageAsync(serializedMonitoringNonce);
+
+                #endregion 
 
                 return txHash;
             }
@@ -147,7 +194,6 @@ namespace Services.Signature
             var currentGasPrice = (await _web3.Eth.GasPrice.SendRequestAsync()).Value;
             var selectedGasPrice = currentGasPrice * _baseSettings.GasPricePercentage / 100;
 
-
             if (selectedGasPrice > gasPriceSetting.Max)
             {
                 selectedGasPrice = gasPriceSetting.Max;
@@ -156,7 +202,6 @@ namespace Services.Signature
             {
                 selectedGasPrice = gasPriceSetting.Min;
             }
-
 
             gasPrice = gasPrice == null || gasPrice.Value == 0 ? selectedGasPrice : gasPrice;
             gasValue = gasValue == null || gasValue.Value == 0 ? Constants.GasForCoinTransaction : gasValue;

@@ -17,6 +17,7 @@ using Services.Transactions;
 using SigningServiceApiCaller;
 using System;
 using Core.Repositories;
+using Core;
 
 namespace Services
 {
@@ -107,8 +108,10 @@ namespace Services
                 var nonceCalculator = provider.GetService<INonceCalculator>();
                 var transactionRouter = provider.GetService<ITransactionRouter>();
                 var gasPriceRepository = provider.GetService<IGasPriceRepository>();
+                var queueFactory = provider.GetService<IQueueFactory>();
+                var transactionInfoRepository = provider.GetService<ITransactionInfoRepository>();
 
-                var transactionManager = new LykkeSignedTransactionManager(baseSettings, nonceCalculator, signatureApi, transactionRouter, web3, gasPriceRepository);
+                var transactionManager = new LykkeSignedTransactionManager(baseSettings, nonceCalculator, signatureApi, transactionRouter, web3, gasPriceRepository, queueFactory, transactionInfoRepository);
 
                 web3.Client.OverridingRequestInterceptor = new SignatureInterceptor(transactionManager);
 

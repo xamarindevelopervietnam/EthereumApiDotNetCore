@@ -118,29 +118,7 @@ namespace Services.Coins
                 return _addressUtil.IsChecksumAddress(address);
             };
         }
-        //public async Task<string> Swap(Guid id, string clientA, string clientB, string coinA, string coinB, decimal amountA, decimal amountB, string signAHex,
-        //    string signBHex)
-        //{
-        //    var web3 = new Web3(_settings.EthereumUrl);
 
-        //    await web3.Personal.UnlockAccount.SendRequestAsync(_settings.EthereumMainAccount, _settings.EthereumMainAccountPassword, new HexBigInteger(120));
-
-        //    var contract = web3.Eth.GetContract(_settings.MainExchangeContract.Abi, _settings.MainExchangeContract.Address);
-
-        //    var coinAFromDb = await _coinRepository.GetCoin(coinA);
-        //    var coinBFromDb = await _coinRepository.GetCoin(coinB);
-
-        //    var convertedAmountA = amountA.ToBlockchainAmount(coinAFromDb.Multiplier);
-        //    var convertedAmountB = amountB.ToBlockchainAmount(coinBFromDb.Multiplier);
-
-        //    var convertedId = EthUtils.GuidToBigInteger(id);
-
-        //    var swap = contract.GetFunction("swap");
-        //    var tr = await swap.SendTransactionAsync(_settings.EthereumMainAccount, new HexBigInteger(Constants.GasForCoinTransaction), new HexBigInteger(0),
-        //            convertedId, clientA, clientB, coinAFromDb.AdapterAddress, coinBFromDb.AdapterAddress, convertedAmountA, convertedAmountB, signAHex.HexToByteArray().FixByteOrder(), signBHex.HexToByteArray().FixByteOrder(), new byte[0]);
-        //    await _cointTransactionService.PutTransactionToQueue(tr);
-        //    return tr;
-        //}
         public async Task<OperationEstimationResult> EstimateCashoutGas(Guid id, string coinAdapterAddress, string fromAddress, string toAddress, BigInteger amount, string sign)
         {
             var coinAFromDb = await GetCoinWithCheck(coinAdapterAddress);

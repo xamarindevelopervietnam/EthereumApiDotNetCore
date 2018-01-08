@@ -116,8 +116,8 @@ namespace Services.Signature
                 transaction.To,
                 transaction.Data,
                 transaction.Value ?? new BigInteger(0),
-                transaction.GasPrice,
-                transaction.Gas
+                transaction.GasPrice ?? new BigInteger(0),
+                transaction.Gas ?? new BigInteger(0)
             );
         }
 

@@ -65,11 +65,22 @@ namespace Services.Signature
 
         public IAccount Account => throw new NotImplementedException();
 
-        public ITransactionReceiptService TransactionReceiptService { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        private ITransactionReceiptService _transactionReceiptService;
+        public ITransactionReceiptService TransactionReceiptService
+        {
+            get
+            {
+                if (_transactionReceiptService == null) return TransactionReceiptServiceFactory.GetDefaultransactionReceiptService(this);
+                return _transactionReceiptService;
+            }
+            set
+            {
+                _transactionReceiptService = value;
+            }
+        }
 
         IAccount ITransactionManager.Account => throw new NotImplementedException();
 
-        ITransactionReceiptService ITransactionManager.TransactionReceiptService { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         public async Task<HexBigInteger> EstimateGasAsync<T>(T callInput) where T : CallInput
         {
@@ -82,6 +93,11 @@ namespace Services.Signature
             {
                 throw new ArgumentNullException(nameof(callInput));
             }
+
+            var (gasPrice, gasValue) = await GetGasPriceAndValueAsync(callInput.GasPrice ?? BigInteger.Zero, callInput.Gas ?? BigInteger.Zero);
+
+            callInput.Gas = new HexBigInteger(gasValue.Value);
+            callInput.GasPrice = new HexBigInteger(gasPrice.Value);
 
             return await _estimateGas.SendRequestAsync(callInput);
         }

@@ -135,7 +135,14 @@ namespace Services.Coins
             var convertedId = EthUtils.GuidToBigInteger(id);
             //ACTION
             var estimatedGasForOperation = await cashout.EstimateGasAsync(_settings.EthereumMainAccount,
-                        new HexBigInteger(Constants.GasForCoinTransaction), new HexBigInteger(0), convertedId, coinAFromDb.AdapterAddress, fromAddress, toAddress, amount, sign.HexToByteArray().FixByteOrder(), new byte[0]);
+                        new HexBigInteger(Constants.GasForCoinTransaction), new HexBigInteger(0), 
+                        convertedId,
+                        _addressUtil.ConvertToChecksumAddress(coinAFromDb.AdapterAddress), 
+                        fromAddress, 
+                        toAddress,
+                        amount, 
+                        sign.HexToByteArray(), 
+                        new byte[0]);
 
             return new OperationEstimationResult()
             {
@@ -208,7 +215,7 @@ namespace Services.Coins
             // function cashout(uint id, address coinAddress, address client, address to, uint amount, bytes client_sign, bytes params) onlyowner {
             var transactionHash = await cashout.SendTransactionAsync(Constants.AddressForRoundRobinTransactionSending,
                         new HexBigInteger(Constants.GasForCoinTransaction), new HexBigInteger(0),
-                        convertedId, coinAFromDb.AdapterAddress, clientAddr, toAddr, amount, sign.HexToByteArray().FixByteOrder(), new byte[0]);
+                        convertedId, coinAFromDb.AdapterAddress, clientAddr, toAddr, amount, sign.HexToByteArray(), new byte[0]);
             await SaveUserHistory(coinAddress, amount.ToString(), clientAddr, toAddr, transactionHash, "CashOut");
             await CreatePendingTransaction(coinAddress, clientAddr, transactionHash);
 
@@ -233,7 +240,7 @@ namespace Services.Coins
             var convertedId = EthUtils.GuidToBigInteger(id);
             var transactionHash = await transferFunction.SendTransactionAsync(Constants.AddressForRoundRobinTransactionSending,
                     new HexBigInteger(Constants.GasForCoinTransaction), new HexBigInteger(0),
-                    convertedId, coinAFromDb.AdapterAddress, from, to, amount, sign.HexToByteArray().FixByteOrder(), new byte[0]);
+                    convertedId, coinAFromDb.AdapterAddress, from, to, amount, sign.HexToByteArray(), new byte[0]);
             await SaveUserHistory(coinAddress, amount.ToString(), from, to, transactionHash, "Transfer");
             await CreatePendingTransaction(coinAddress, from, transactionHash);
 
@@ -270,7 +277,7 @@ namespace Services.Coins
             var transactionHash = await transferFunction.SendTransactionAsync(Constants.AddressForRoundRobinTransactionSending,
                     new HexBigInteger(Constants.GasForCoinTransaction), new HexBigInteger(0),
                     convertedId, coinAFromDb.AdapterAddress, from, to, amount, change,
-                    signFrom.HexToByteArray().FixByteOrder(), signTo.HexToByteArray().FixByteOrder(), new byte[0]);
+                    signFrom.HexToByteArray(), signTo.HexToByteArray(), new byte[0]);
             var difference = (amount - change);
 
             await SaveUserHistory(coinAddress, difference.ToString(), from, to, transactionHash, "TransferWithChange");
@@ -295,7 +302,7 @@ namespace Services.Coins
             var convertedId = EthUtils.GuidToBigInteger(id);
             var transactionHash = await transferFunction.SendTransactionAsync(_settings.EthereumMainAccount,
                     new HexBigInteger(Constants.GasForCoinTransaction), new HexBigInteger(0),
-                    convertedId, coinAFromDb.AdapterAddress, from, to, amount, sign.HexToByteArray().FixByteOrder(), new byte[0]);
+                    convertedId, coinAFromDb.AdapterAddress, from, to, amount, sign.HexToByteArray(), new byte[0]);
             await SaveUserHistory(coinAddress, amount.ToString(), from, to, transactionHash, "Transfer");
             await CreatePendingTransaction(coinAddress, from, transactionHash);
 

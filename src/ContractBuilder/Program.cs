@@ -56,6 +56,7 @@ namespace ContractBuilder
             SaveSettings(settings);
 
             IServiceCollection collection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            collection.AddSingleton(settings);
             collection.AddSingleton<IBaseSettings>(settings.EthereumCore);
             collection.AddSingleton<ISlackNotificationSettings>(settings.SlackNotifications);
 
@@ -82,6 +83,12 @@ namespace ContractBuilder
             //{
             //    Key = "",
             //});
+
+            var eventService = ServiceProvider.GetService<ITransactionEventsService>();
+            eventService.IndexCashinEventsForAdapter("0x1c4ca817d1c61f9c47ce2bec9d7106393ff981ce", "0x512867d36f1d6ee43f2056a7c41606133bce514fbc8e911c1834eeae80800ceb").Wait();
+
+
+
 
             #region StatusExamples
             //var service = ServiceProvider.GetService<ICoinTransactionService>();

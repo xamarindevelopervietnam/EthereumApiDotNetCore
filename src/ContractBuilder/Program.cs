@@ -83,6 +83,54 @@ namespace ContractBuilder
             //    Key = "",
             //});
 
+            #region StatusExamples
+            //var service = ServiceProvider.GetService<ICoinTransactionService>();
+            //{
+            //    //fail
+            //    var x = service.ProcessTransaction(new Services.Coins.Models.CoinTransactionMessage()
+            //    {
+            //        TransactionHash = "0xf86efe1b8de285b8255519ca7d0ac76088132e6c5306f88dfc27312c6d7127ea",
+            //    }).Result;
+            //}
+
+            //{
+            //    //ok
+            //    var x = service.ProcessTransaction(new Services.Coins.Models.CoinTransactionMessage()
+            //    {
+            //        TransactionHash = "0xa237230df97a0d6710241597a0186662928afa373c13b8d4eac86f36aa678985",
+            //    }).Result;
+            //}
+
+            //{
+            //    //fail
+            //    var x = service.ProcessTransaction(new Services.Coins.Models.CoinTransactionMessage()
+            //    {
+            //        TransactionHash = "0xb63ac4f94006cbbfe58a1d651e173c56dc74a45e4d1141ac57fc51a0d4202e95",
+            //    }).Result;
+            //}
+
+            //{
+            //    //fail
+            //    var x = service.ProcessTransaction(new Services.Coins.Models.CoinTransactionMessage()
+            //    {
+            //        TransactionHash = "0x1df50ee79d0af8b433f7f0be2a84cbb5dc3e29e5822e78b9c6a7ec33d027e286",
+            //    }).Result;
+            //}
+
+            //{
+            //    //fail
+            //    var x = service.ProcessTransaction(new Services.Coins.Models.CoinTransactionMessage()
+            //    {
+            //        TransactionHash = "0xa3d4c1da523273371fe45c928b9236b353976e7b9e6d2b31e659f7a4c781a764",
+            //    }).Result;
+            //}
+
+            #endregion
+
+            //0xf86efe1b8de285b8255519ca7d0ac76088132e6c5306f88dfc27312c6d7127ea      0x0 
+            //0xa237230df97a0d6710241597a0186662928afa373c13b8d4eac86f36aa678985      0x1
+            //0xb63ac4f94006cbbfe58a1d651e173c56dc74a45e4d1141ac57fc51a0d4202e95
+
             var service = ServiceProvider.GetService<IErcInterfaceService>();
             service.Transfer("0x5adbf411faf2595698d80b7f93d570dd16d7f4b2", settings.EthereumCore.EthereumMainAccount,
                 "0xae4d8b0c887508750ddb6b32752a82431941e2e7", System.Numerics.BigInteger.Parse("10000000000000000000")).Wait();

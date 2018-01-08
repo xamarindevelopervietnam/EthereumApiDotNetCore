@@ -16,6 +16,7 @@ using Nethereum.RPC.TransactionManagers;
 using Nethereum.RPC.TransactionReceipts;
 using Nethereum.Util;
 using Nethereum.Web3;
+using Nethereum.Web3.Accounts;
 using SigningServiceApiCaller;
 using SigningServiceApiCaller.Models;
 
@@ -65,6 +66,10 @@ namespace Services.Signature
         public IAccount Account => throw new NotImplementedException();
 
         public ITransactionReceiptService TransactionReceiptService { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        IAccount ITransactionManager.Account => throw new NotImplementedException();
+
+        ITransactionReceiptService ITransactionManager.TransactionReceiptService { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         public async Task<HexBigInteger> EstimateGasAsync<T>(T callInput) where T : CallInput
         {
@@ -163,8 +168,8 @@ namespace Services.Signature
             }
 
 
-            gasPrice = gasPrice == null || gasPrice.Value == 0 ? selectedGasPrice : gasPrice;
-            gasValue = gasValue == null || gasValue.Value == 0 ? Constants.GasForCoinTransaction : gasValue;
+            gasPrice = selectedGasPrice;
+            gasValue = gasValue == null || gasValue.Value == 0 || gasValue.Value == 21000 ? Constants.GasForCoinTransaction : gasValue;
 
             return (gasPrice, gasValue);
         }

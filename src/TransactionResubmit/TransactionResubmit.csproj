@@ -27,9 +27,6 @@
     <None Update="appsettings.json">
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
-    <None Update="HashForResubmit.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="TransactionsForResubmit.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

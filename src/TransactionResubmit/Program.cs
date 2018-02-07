@@ -21,6 +21,7 @@ using System.Numerics;
 using System.Threading.Tasks;
 using Lykke.Service.RabbitMQ;
 using Lykke.SettingsReader;
+using Lykke.Service.EthereumCore.Services.New;
 
 namespace TransactionResubmit
 {
@@ -37,8 +38,12 @@ namespace TransactionResubmit
             var settings = GetCurrentSettings();
 
             IServiceCollection collection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            collection.AddSingleton(settings);
+            collection.AddSingleton(settings.Nested(x => x.EthereumCore));
+            collection.AddSingleton(settings.CurrentValue);
             collection.AddSingleton<IBaseSettings>(settings.CurrentValue.EthereumCore);
             collection.AddSingleton<ISlackNotificationSettings>(settings.CurrentValue.SlackNotifications);
+            collection.AddSingleton<ILog>(new Common.Log.LogToConsole());
 
             //RegisterReposExt.RegisterAzureLogs(collection, settings.EthereumCore, "");
             RegisterReposExt.RegisterAzureQueues(collection, settings.Nested(x => x.EthereumCore), settings.Nested(x => x.SlackNotifications));
@@ -72,6 +77,7 @@ namespace TransactionResubmit
             Console.WriteLine($"Type 9 to REMOVE DUPLICATE user transfer wallet locks");
             Console.WriteLine($"Type 10 to move from pending-poison to processing");
             Console.WriteLine($"Type 11 to PUT EVERYTHING IN PENDING WITH zero dequeue count");
+            Console.WriteLine($"Type 15 to PUT missing erc20 cashin in queue");
             var command = "";
 
             do
@@ -112,6 +118,9 @@ namespace TransactionResubmit
                     case "11":
                         MoveFromPendingAndPoisonToProcessing();
                         break;
+                    case "15":
+                        FixErc20Cashins();
+                        break;
 
                     default:
                         break;
@@ -121,6 +130,39 @@ namespace TransactionResubmit
 
             Console.WriteLine("Exited");
         }
+
+        private static void FixErc20Cashins()
+        {
+            try
+            {
+                Console.WriteLine("Are you sure?: Y/N");
+                var input = Console.ReadLine();
+                if (input.ToLower() != "y")
+                {
+                    Console.WriteLine("Cancel");
+                    return;
+                }
+
+                Console.WriteLine("Enter blocknumber to retry cashins");
+                BigInteger blockNumber;
+                while (!BigInteger.TryParse(Console.ReadLine(), out blockNumber))
+                {
+                    Console.WriteLine("Type one more time");
+                };
+                //2507153
+                //2552291
+                ITransactionEventsService transactionService = ServiceProvider.GetService<ITransactionEventsService>();
+
+                transactionService.RestartIndexedEventsForBlock(blockNumber).Wait();
+
+                Console.WriteLine("All Processed");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error processing");
+            }
+        }
+
 
         private static void MoveFromPendingAndPoisonToProcessing()
         {
@@ -687,6 +729,5 @@ namespace TransactionResubmit
 
             return settings;
         }
-
     }
 }

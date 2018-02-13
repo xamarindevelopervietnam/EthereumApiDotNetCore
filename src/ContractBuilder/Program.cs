@@ -61,6 +61,8 @@ namespace ContractBuilder
 
             IServiceCollection collection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             collection.AddSingleton(settings);
+            collection.AddSingleton(settings.Nested(x => x.EthereumCore));
+            collection.AddSingleton(settings.CurrentValue);
             collection.AddSingleton<IBaseSettings>(settings.CurrentValue.EthereumCore);
             collection.AddSingleton<ISlackNotificationSettings>(settings.CurrentValue.SlackNotifications);
             collection.AddSingleton(settings.Nested(x => x.EthereumCore));

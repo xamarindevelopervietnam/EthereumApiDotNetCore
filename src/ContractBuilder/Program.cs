@@ -22,6 +22,7 @@ using Lykke.Service.EthereumCore.Services.New;
 using Lykke.Service.EthereumCore.Core;
 using Lykke.Service.EthereumCore.Models;
 using System.Numerics;
+using Common;
 using Lykke.Service.EthereumCore.Core.Repositories;
 using Nethereum.Util;
 using Lykke.Job.EthereumCore.Job;
@@ -53,7 +54,7 @@ namespace ContractBuilder
 
             var configurationBuilder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json").AddEnvironmentVariables();
+                .AddEnvironmentVariables();
             var configuration = configurationBuilder.Build();
 
             var settings = GetCurrentSettingsFromUrl();
@@ -96,6 +97,28 @@ namespace ContractBuilder
             //var eventService = ServiceProvider.GetService<ITransactionEventsService>();
             //eventService.IndexCashinEventsForAdapter("0x1c4ca817d1c61f9c47ce2bec9d7106393ff981ce",
             //    "0x512867d36f1d6ee43f2056a7c41606133bce514fbc8e911c1834eeae80800ceb").Wait();
+
+            #region IATA Coin
+
+            string tokenAddress;
+            Contract contract;
+
+            var web3 = ServiceProvider.GetService<IWeb3>();
+            {
+                var abi = GetFileContent("Invoice.abi");
+                var bytecode = GetFileContent("Invoice.bin");
+                string invoiceId = "1";
+                BigInteger amount = 1000000000;
+                BigInteger dueDate = (long)(DateTime.UtcNow + TimeSpan.FromDays(5)).ToUnixTime();
+                string allowedTokenAddress = "0x1c4ca817d1c61f9c47ce2bec9d7106393ff981ce";
+                string merchantAirlinesWalletAddress = "0x1c4ca817d1c61f9c47ce2bec9d7106393ff981ce";
+                tokenAddress =
+                    ServiceProvider.GetService<IContractService>()
+                    .CreateContract(abi, bytecode, 4000000,invoiceId, amount, dueDate, allowedTokenAddress, merchantAirlinesWalletAddress)
+                    .Result;
+            }
+
+            #endregion
 
 
             #region DBE TOKEN
